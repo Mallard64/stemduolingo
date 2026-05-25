@@ -4,16 +4,18 @@ import { cn } from "@/lib/utils";
 export function AnswerFeedback({
   correct,
   explanation,
+  wrongReason,
   onContinue,
 }: {
   correct: boolean;
   explanation: string | null;
+  wrongReason?: string | null;
   onContinue: () => void;
 }) {
   return (
     <div
       className={cn(
-        "fixed inset-x-0 bottom-0 z-30 border-t-4 p-4 sm:p-6 animate-in slide-in-from-bottom-4 duration-200",
+        "fixed inset-x-0 bottom-16 z-30 border-t-4 p-4 sm:p-6 animate-in slide-in-from-bottom-4 duration-200",
         correct ? "bg-success/10 border-success" : "bg-error/10 border-error"
       )}
     >
@@ -23,6 +25,7 @@ export function AnswerFeedback({
             <span aria-hidden>{correct ? "✓" : "✕"}</span>
             {correct ? "Correct!" : "Not quite."}
           </div>
+          {!correct && wrongReason && <p className="text-sm text-ink-muted mt-1 max-w-xl">{wrongReason}</p>}
           {explanation && <p className="text-sm text-ink-muted mt-1 max-w-xl">{explanation}</p>}
         </div>
         <button
