@@ -1,0 +1,86 @@
+"use client";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
+import type { TopicWithStatus } from "@/lib/types";
+
+export default function LearnPage() {
+  const [topics, setTopics] = useState<TopicWithStatus[] | null>(null);
+
+  useEffect(() => {
+    fetch("/api/topics")
+      .then((r) => r.json())
+      .then((d) => setTopics(d.topics));
+  }, []);
+
+  if (!topics) {
+    return <div className="text-ink-muted">Loading skill tree…</div>;
+  }
+
+  const currentIdx = topics.findIndex((t) => !t.completed && !t.locked);
+
+  return (
+    <div>
+      <h1 className="text-2xl font-bold mb-1">AP Chemistry</h1>
+      <p className="text-ink-muted text-sm mb-6">5 topics · linear unlock</p>
+
+      <ol className="relative flex flex-col items-center gap-6">
+        <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-1 bg-border rounded-full" />
+        {topics.map((t, i) => {
+          const isCurrent = i === currentIdx;
+          const isLeftZig = i % 2 === 0;
+          return (
+            <li key={t.id} className="relative w-full flex justify-center">
+              <div className={cn("absolute top-1/2 -translate-y-1/2", isLeftZig ? "right-[55%] text-right" : "left-[55%] text-left")}>
+                <div className="font-semibold">{t.title}</div>
+                <div className="text-xs text-ink-muted max-w-[140px]">{t.description}</div>
+              </div>
+
+              <TopicNode topic={t} isCurrent={isCurrent} />
+            </li>
+          );
+        })}
+      </ol>
+
+      <div className="mt-10 card">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="font-semibold">Today's Element Match</div>
+            <div className="text-sm text-ink-muted">Quick daily puzzle — 30s to 1m.</div>
+          </div>
+          <Link href="/daily" className="btn-primary">Play</Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TopicNode({ topic, isCurrent }: { topic: TopicWithStatus; isCurrent: boolean }) {
+  const base = "relative z-10 size-20 rounded-full grid place-items-center font-bold border-4 text-lg shadow-sm transition";
+  if (topic.completed) {
+    return (
+      <Link href={`/learn/${topic.id}`} className={cn(base, "bg-success text-white border-success/30 hover:scale-105")}>
+        ✓
+      </Link>
+    );
+  }
+  if (topic.locked) {
+    return (
+      <div className={cn(base, "bg-surface text-ink-subtle border-border cursor-not-allowed")}>
+        🔒
+      </div>
+    );
+  }
+  return (
+    <Link
+      href={`/learn/${topic.id}`}
+      className={cn(
+        base,
+        "bg-primary text-white border-primary-light hover:scale-105",
+        isCurrent && "ring-4 ring-primary-light animate-pulse"
+      )}
+    >
+      {topic.order_index}
+    </Link>
+  );
+}
