@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { StreakBadge } from "./streak-badge";
 import { XPBar } from "./xp-bar";
 import { HeartsDisplay } from "./hearts-display";
+import { useUser } from "@/lib/store/user";
 
 const TABS = [
   { href: "/learn", label: "Learn", icon: "📚" },
@@ -13,6 +14,7 @@ const TABS = [
 ];
 
 export function TopBar() {
+  const refillHearts = useUser((s) => s.refillHearts);
   return (
     <header className="sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-border">
       <div className="mx-auto max-w-3xl px-4 py-3 flex items-center justify-between">
@@ -24,6 +26,12 @@ export function TopBar() {
           <HeartsDisplay />
           <StreakBadge />
           <XPBar />
+          <button
+            onClick={refillHearts}
+            className="text-xs px-2 py-1 rounded bg-amber-100 text-amber-900 hover:bg-amber-200 font-medium"
+          >
+            +5 ❤️
+          </button>
         </div>
       </div>
     </header>
@@ -42,7 +50,7 @@ export function BottomNav() {
               <Link
                 href={t.href}
                 className={cn(
-                  "flex flex-col items-center py-2 text-xs font-medium",
+                  "flex flex-col items-center py-2 text-sm font-medium",
                   active ? "text-primary" : "text-ink-muted hover:text-ink"
                 )}
               >
