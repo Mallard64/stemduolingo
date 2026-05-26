@@ -33,7 +33,7 @@ export function TopBar() {
 export function BottomNav() {
   const path = usePathname();
   return (
-    <nav className="sticky bottom-1 z-20 bg-white border-t border-border">
+    <nav className="sticky bottom-0 z-20 bg-white border-t border-border">
       <ul className="mx-auto max-w-4xl flex">
         {TABS.map((t) => {
           const active = path?.startsWith(t.href);
