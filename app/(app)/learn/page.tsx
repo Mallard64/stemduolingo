@@ -24,16 +24,16 @@ export default function LearnPage() {
       <h1 className="text-2xl font-bold mb-1">AP Chemistry</h1>
       <p className="text-ink-muted text-sm mb-6">5 topics · linear unlock</p>
 
-      <ol className="relative flex flex-col items-center gap-6">
+      <ol className="relative flex flex-col items-center gap-8">
         <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-1 bg-border rounded-full" />
         {topics.map((t, i) => {
           const isCurrent = i === currentIdx;
           const isLeftZig = i % 2 === 0;
           return (
-            <li key={t.id} className="relative w-full flex justify-center">
-              <div className={cn("absolute top-1/2 -translate-y-1/2", isLeftZig ? "right-[55%] text-right" : "left-[55%] text-left")}>
-                <div className="font-semibold">{t.title}</div>
-                <div className="text-xs text-ink-muted max-w-[140px]">{t.description}</div>
+            <li key={t.id} className="relative w-full flex flex-col items-center gap-3">
+              <div className={cn("text-center", isLeftZig ? "self-end pr-[calc(50%+56px)]" : "self-start pl-[calc(50%+56px)]")}>
+                <div className="font-semibold text-sm">{t.title}</div>
+                <div className="text-xs text-ink-muted">{t.description}</div>
               </div>
 
               <TopicNode topic={t} isCurrent={isCurrent} />
