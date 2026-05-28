@@ -57,7 +57,7 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
             className="text-ink-muted hover:text-ink text-2xl leading-none"
             aria-label={t("common.close")}
           >
-            ✕
+            X
           </button>
         </div>
 
