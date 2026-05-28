@@ -12,12 +12,12 @@ export default function LoginPage() {
   function submit(e: React.FormEvent) {
     e.preventDefault();
     const username = email.split("@")[0] || "you";
-    signIn(username);
+    signIn(username, email);
     router.push("/learn");
   }
 
   function google() {
-    signIn("you");
+    signIn("you", "user@gmail.com");
     router.push("/learn");
   }
 
