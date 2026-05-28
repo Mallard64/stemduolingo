@@ -9,7 +9,9 @@ import { useUser } from "@/lib/store/user";
 
 const TABS = [
   { href: "/learn", label: "Learn", icon: "📚" },
+  { href: "/friends", label: "Friends", icon: "👥" },
   { href: "/daily", label: "Daily", icon: "⚗️" },
+  { href: "/store", label: "Store", icon: "🛒" },
   { href: "/leaderboard", label: "Ranks", icon: "🏆" },
 ];
 
@@ -50,7 +52,7 @@ export function BottomNav() {
               <Link
                 href={t.href}
                 className={cn(
-                  "flex flex-col items-center py-2 text-sm font-medium",
+                  "flex flex-col items-center py-2 text-xs sm:text-sm font-medium",
                   active ? "text-primary" : "text-ink-muted hover:text-ink"
                 )}
               >
