@@ -74,6 +74,7 @@ export type PuzzleResult = {
 export type Profile = {
   id: string;
   username: string;
+  email: string;
   created_at: string;
   current_streak: number;
   last_active_date: string | null;

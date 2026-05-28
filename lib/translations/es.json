@@ -1,0 +1,62 @@
+{
+  "common": {
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "logout": "Cerrar sesión",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "change": "Cambiar",
+    "language": "Idioma",
+    "settings": "Configuración",
+    "close": "Cerrar",
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito"
+  },
+  "settings": {
+    "title": "Configuración",
+    "email_label": "Dirección de Correo Electrónico",
+    "change_password": "Cambiar Contraseña",
+    "current_password": "Contraseña Actual",
+    "new_password": "Nueva Contraseña",
+    "confirm_password": "Confirmar Contraseña",
+    "logout_button": "Cerrar Sesión",
+    "language_label": "Idioma",
+    "english": "English",
+    "spanish": "Español",
+    "password_updated": "Contraseña actualizada exitosamente",
+    "passwords_dont_match": "Las contraseñas no coinciden",
+    "logout_confirmation": "¿Estás seguro de que deseas cerrar sesión?",
+    "confirm": "Confirmar",
+    "account_settings": "Configuración de Cuenta",
+    "preferences": "Preferencias"
+  },
+  "auth": {
+    "welcome_back": "Bienvenido de vuelta",
+    "sign_in_to_continue": "Inicia sesión para continuar tu racha.",
+    "email_placeholder": "tu@escuela.edu",
+    "password_placeholder": "Contraseña",
+    "sign_in": "Iniciar sesión",
+    "or": "o",
+    "continue_google": "Continuar con Google",
+    "new_here": "¿Eres nuevo aquí?",
+    "create_account": "Crear una cuenta"
+  },
+  "learn": {
+    "title": "Aprender",
+    "lessons": "Lecciones"
+  },
+  "daily": {
+    "title": "Diario",
+    "puzzle": "Puzzle"
+  },
+  "leaderboard": {
+    "title": "Rankings",
+    "leaderboard": "Tabla de Clasificación"
+  },
+  "nav": {
+    "learn": "Aprender",
+    "daily": "Diario",
+    "ranks": "Rankings"
+  }
+}
