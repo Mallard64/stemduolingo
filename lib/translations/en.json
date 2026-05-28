@@ -1,0 +1,62 @@
+{
+  "common": {
+    "email": "Email",
+    "password": "Password",
+    "logout": "Log Out",
+    "cancel": "Cancel",
+    "save": "Save",
+    "change": "Change",
+    "language": "Language",
+    "settings": "Settings",
+    "close": "Close",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success"
+  },
+  "settings": {
+    "title": "Settings",
+    "email_label": "Email Address",
+    "change_password": "Change Password",
+    "current_password": "Current Password",
+    "new_password": "New Password",
+    "confirm_password": "Confirm Password",
+    "logout_button": "Log Out",
+    "language_label": "Language",
+    "english": "English",
+    "spanish": "Español",
+    "password_updated": "Password updated successfully",
+    "passwords_dont_match": "Passwords don't match",
+    "logout_confirmation": "Are you sure you want to log out?",
+    "confirm": "Confirm",
+    "account_settings": "Account Settings",
+    "preferences": "Preferences"
+  },
+  "auth": {
+    "welcome_back": "Welcome back",
+    "sign_in_to_continue": "Sign in to continue your streak.",
+    "email_placeholder": "you@school.edu",
+    "password_placeholder": "Password",
+    "sign_in": "Sign in",
+    "or": "or",
+    "continue_google": "Continue with Google",
+    "new_here": "New here?",
+    "create_account": "Create an account"
+  },
+  "learn": {
+    "title": "Learn",
+    "lessons": "Lessons"
+  },
+  "daily": {
+    "title": "Daily",
+    "puzzle": "Puzzle"
+  },
+  "leaderboard": {
+    "title": "Ranks",
+    "leaderboard": "Leaderboard"
+  },
+  "nav": {
+    "learn": "Learn",
+    "daily": "Daily",
+    "ranks": "Ranks"
+  }
+}
