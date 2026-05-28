@@ -53,9 +53,11 @@ export default function DailyPuzzlePage() {
     const { correct } = await checkRes.json();
 
     if (!correct) {
-      setMistakes((m) => m + 1);
+      const nextMistakes = mistakes + 1;
+      setMistakes(nextMistakes);
       setSelected([]);
       setSubmitting(false);
+      if (nextMistakes >= 4) completePuzzle(); // failing locks the puzzle until tomorrow
       return;
     }
 
@@ -87,6 +89,19 @@ export default function DailyPuzzlePage() {
     setSubmitting(false);
   }
 
+  // Game over this session — shown before the "already done" lock so the player
+  // sees the failure screen; on reload the puzzle stays locked (see below).
+  if (mistakes >= 4) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-6xl mb-3" aria-hidden>🧪</div>
+        <h2 className="text-2xl font-bold mb-2">Out of attempts</h2>
+        <p className="text-ink-muted mb-4">Come back tomorrow for a new puzzle.</p>
+        <button className="btn-primary" onClick={() => router.push("/learn")}>Back to learn</button>
+      </div>
+    );
+  }
+
   if (alreadyDone) {
     const hasSessionResult = typeof window !== "undefined" && !!sessionStorage.getItem("omnistem-puzzle-result");
     return (
@@ -110,17 +125,6 @@ export default function DailyPuzzlePage() {
 
   if (!items) {
     return <div className="text-ink-muted">Loading today's puzzle…</div>;
-  }
-
-  if (mistakes >= 4) {
-    return (
-      <div className="text-center py-12">
-        <div className="text-6xl mb-3" aria-hidden>🧪</div>
-        <h2 className="text-2xl font-bold mb-2">Out of attempts</h2>
-        <p className="text-ink-muted mb-4">Come back tomorrow for a new puzzle.</p>
-        <button className="btn-primary" onClick={() => router.push("/learn")}>Back to learn</button>
-      </div>
-    );
   }
 
   return (
