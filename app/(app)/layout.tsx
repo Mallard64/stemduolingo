@@ -8,7 +8,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const profile = useUser((s) => s.profile);
   const hydrated = useUser((s) => s.hydrated);
-  const maybeDailyRefill = useUser((s) => s.maybeDailyRefill);
+  const checkDaily = useUser((s) => s.checkDaily);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -16,8 +16,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       router.replace("/login");
       return;
     }
-    maybeDailyRefill();
-  }, [hydrated, profile, router, maybeDailyRefill]);
+    checkDaily();
+  }, [hydrated, profile, router, checkDaily]);
 
   if (!hydrated) {
     return <div className="min-h-screen grid place-items-center text-ink-muted">Loading…</div>;
