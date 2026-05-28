@@ -1,13 +1,9 @@
 import { NextResponse } from "next/server";
 import { puzzleForDate, todayUTC } from "@/lib/seed/puzzles";
-import { DEMO_USER, puzzleAlreadyCompletedToday } from "@/lib/store/server-state";
 
+// Whether the user already played today is tracked client-side in localStorage.
 export async function GET() {
   const date = todayUTC();
   const puzzle = puzzleForDate(date);
-  return NextResponse.json({
-    date,
-    items: puzzle.items,
-    already_completed: puzzleAlreadyCompletedToday(DEMO_USER, date),
-  });
+  return NextResponse.json({ date, items: puzzle.items });
 }
