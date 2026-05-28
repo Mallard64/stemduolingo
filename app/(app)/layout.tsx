@@ -13,7 +13,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!hydrated) return;
     if (!profile) {
-      router.replace("/login");
+      router.replace("/");
       return;
     }
     checkDaily();
