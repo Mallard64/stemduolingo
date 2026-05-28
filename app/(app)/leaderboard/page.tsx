@@ -1,16 +1,36 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
-import type { LeaderboardEntry } from "@/lib/types";
+import { useUser } from "@/lib/store/user";
+import type { LeaderboardEntry, Profile } from "@/lib/types";
 
 export default function LeaderboardPage() {
-  const [data, setData] = useState<{ users: LeaderboardEntry[]; current_user_rank: number | null } | null>(null);
+  const profile = useUser((s) => s.profile);
+  const [fakes, setFakes] = useState<Profile[] | null>(null);
 
   useEffect(() => {
     fetch("/api/leaderboard")
       .then((r) => r.json())
-      .then(setData);
+      .then((d) => setFakes(d.users));
   }, []);
+
+  const data = useMemo(() => {
+    if (!fakes) return null;
+    const all = profile ? [...fakes, profile] : [...fakes];
+    all.sort((a, b) => b.total_xp - a.total_xp);
+    const ranked: LeaderboardEntry[] = all.map((u, i) => ({
+      username: u.username,
+      total_xp: u.total_xp,
+      current_streak: u.current_streak,
+      rank: i + 1,
+      is_current_user: !!profile && u.id === profile.id,
+    }));
+    const me = ranked.find((u) => u.is_current_user);
+    return {
+      users: ranked.slice(0, 30),
+      current_user_rank: me && me.rank > 30 ? me.rank : null,
+    };
+  }, [fakes, profile]);
 
   if (!data) return <div className="text-ink-muted">Loading leaderboard…</div>;
 

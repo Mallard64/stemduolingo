@@ -2,19 +2,23 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useUser } from "@/lib/store/user";
 
 type SolvedGroup = { items: string[] };
 
 export default function DailyPuzzlePage() {
   const router = useRouter();
+  const puzzleDoneDate = useUser((s) => s.puzzleDoneDate);
+  const completePuzzle = useUser((s) => s.completePuzzle);
   const [items, setItems] = useState<string[] | null>(null);
   const [date, setDate] = useState<string>("");
-  const [alreadyDone, setAlreadyDone] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [solved, setSolved] = useState<SolvedGroup[]>([]);
   const [mistakes, setMistakes] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const startedAt = useRef<number>(Date.now());
+
+  const alreadyDone = puzzleDoneDate === new Date().toISOString().slice(0, 10);
 
   useEffect(() => {
     fetch("/api/daily-puzzle")
@@ -22,7 +26,6 @@ export default function DailyPuzzlePage() {
       .then((d) => {
         setItems(d.items);
         setDate(d.date);
-        setAlreadyDone(d.already_completed);
         startedAt.current = Date.now();
       });
   }, []);
@@ -72,6 +75,7 @@ export default function DailyPuzzlePage() {
         }),
       });
       const data = await res.json();
+      completePuzzle();
       sessionStorage.setItem(
         "omnistem-puzzle-result",
         JSON.stringify({ ...data, time_seconds: time, date, mistakes })
@@ -81,10 +85,6 @@ export default function DailyPuzzlePage() {
     }
 
     setSubmitting(false);
-  }
-
-  if (!items) {
-    return <div className="text-ink-muted">Loading today's puzzle…</div>;
   }
 
   if (alreadyDone) {
@@ -106,6 +106,10 @@ export default function DailyPuzzlePage() {
         </div>
       </div>
     );
+  }
+
+  if (!items) {
+    return <div className="text-ink-muted">Loading today's puzzle…</div>;
   }
 
   if (mistakes >= 4) {
