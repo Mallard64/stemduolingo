@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   title: "OmniSTEM — AP Chemistry, gamified",
   description: "Duolingo-style AP Chemistry lessons + a daily Element Match puzzle.",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/icon-192.svg",
+  },
 };
 
 export const viewport: Viewport = {
