@@ -40,7 +40,7 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
 
   const handleLogout = () => {
     signOut();
-    router.replace("/login");
+    router.replace("/");
     onClose();
   };
 
