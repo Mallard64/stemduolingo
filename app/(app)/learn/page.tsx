@@ -29,8 +29,8 @@ export default function LearnPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-1">AP Chemistry</h1>
-      <p className="text-ink-muted text-sm mb-6">5 topics · linear unlock</p>
+      <h1 className="text-2xl font-bold mb-1">AP Chemistry · Unit 1</h1>
+      <p className="text-ink-muted text-sm mb-6">Atomic Structure & Properties · {topics.length} learning targets</p>
 
       <ol className="relative flex flex-col items-center gap-8">
         <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-1 bg-border rounded-full" />
