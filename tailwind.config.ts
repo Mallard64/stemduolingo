@@ -17,6 +17,7 @@ const config: Config = {
         },
         bg: "#FFFFFF",
         surface: "#FAFAFA",
+        "card-bg": "#FFFFFF",
         border: "#E5E5E5",
         ink: {
           DEFAULT: "#18181B",

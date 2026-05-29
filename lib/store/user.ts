@@ -2,7 +2,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { calculateLessonXP } from "@/lib/scoring";
-import type { Profile } from "@/lib/types";
+import type { DailyGameId, Profile } from "@/lib/types";
 
 type LessonResult = {
   xpEarned: number;
@@ -31,6 +31,7 @@ type UserStore = {
   heartsDate: string | null;       // YYYY-MM-DD of last refill
   completedTopics: string[];       // topic ids the user has finished
   puzzleDoneDate: string | null;   // YYYY-MM-DD the daily Element Match was last completed
+  dailyGameDoneDates: Partial<Record<DailyGameId, string>>;
   themeMode: "light" | "dark";
   friendUsernames: string[];
   outgoingFriendRequests: FriendRequest[];
@@ -49,9 +50,10 @@ type UserStore = {
   useStreakFreeze: () => boolean;
   checkDaily: () => void;
   completeLesson: (topicId: string, heartsRemaining: number) => LessonResult;
-  completePuzzle: () => void;
+  completePuzzle: (gameId?: DailyGameId) => void;
   isTopicCompleted: (topicId: string) => boolean;
   isPuzzleDoneToday: () => boolean;
+  isDailyGameDoneToday: (gameId: DailyGameId) => boolean;
   signIn: (username: string, email?: string) => void;
   signOut: () => void;
   setThemeMode: (mode: "light" | "dark") => void;
@@ -90,6 +92,7 @@ export const useUser = create<UserStore>()(
       heartsDate: null,
       completedTopics: [],
       puzzleDoneDate: null,
+      dailyGameDoneDates: {},
       themeMode: "light",
       friendUsernames: ["Avery", "Sam"],
       outgoingFriendRequests: [],
@@ -221,9 +224,18 @@ export const useUser = create<UserStore>()(
         return { xpEarned, newTotalXP, newStreak, streakExtended };
       },
 
-      completePuzzle: () => set({ puzzleDoneDate: today() }),
+      completePuzzle: (gameId = "element-match") => {
+        const t = today();
+        set({
+          puzzleDoneDate: gameId === "element-match" ? t : get().puzzleDoneDate,
+          dailyGameDoneDates: { ...(get().dailyGameDoneDates ?? {}), [gameId]: t },
+        });
+      },
       isTopicCompleted: (topicId) => get().completedTopics.includes(topicId),
       isPuzzleDoneToday: () => get().puzzleDoneDate === today(),
+      isDailyGameDoneToday: (gameId) =>
+        get().dailyGameDoneDates?.[gameId] === today() ||
+        (gameId === "element-match" && get().puzzleDoneDate === today()),
 
       signIn: (username, email?: string) =>
         set({
@@ -232,6 +244,7 @@ export const useUser = create<UserStore>()(
           heartsDate: today(),
           completedTopics: [],
           puzzleDoneDate: null,
+          dailyGameDoneDates: {},
           friendUsernames: ["Avery", "Sam"],
           outgoingFriendRequests: [],
           incomingFriendRequests: [
