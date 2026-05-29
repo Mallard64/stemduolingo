@@ -10,6 +10,8 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
   const profile = useUser((s) => s.profile);
   const signOut = useUser((s) => s.signOut);
   const changePassword = useUser((s) => s.changePassword);
+  const themeMode = useUser((s) => s.themeMode);
+  const setThemeMode = useUser((s) => s.setThemeMode);
   const { language, setLanguage, t } = useI18n();
 
   const [activeTab, setActiveTab] = useState<"account" | "preferences">("account");
@@ -198,6 +200,29 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
                       }`}
                     >
                       {lang === "en" ? t("settings.english") : t("settings.spanish")}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Theme Selector */}
+              <div>
+                <label className="block text-sm font-medium text-ink mb-4">
+                  {t("settings.theme_label")}
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  {(["light", "dark"] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setThemeMode(mode)}
+                      className={`w-full p-4 rounded-xl border-2 text-sm font-medium transition ${
+                        themeMode === mode
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border bg-surface text-ink hover:border-primary/50"
+                      }`}
+                    >
+                      {mode === "light" ? t("settings.light_mode") : t("settings.dark_mode")}
                     </button>
                   ))}
                 </div>

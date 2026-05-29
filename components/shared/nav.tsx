@@ -8,6 +8,7 @@ import { XPBar } from "./xp-bar";
 import { HeartsDisplay } from "./hearts-display";
 import { SettingsModal } from "./settings-modal";
 import { useUser } from "@/lib/store/user";
+import { ThemeProvider } from "./theme-provider";
 
 const TABS = [
   { href: "/learn", label: "📚", labelText: "Learn" },
@@ -21,7 +22,7 @@ export function TopBar() {
   
   return (
     <>
-      <header className="sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-border">
+      <header className="sticky top-0 z-20 backdrop-blur border-border">
         <div className="mx-auto max-w-3xl px-4 py-3 flex items-center justify-between">
           <Link href="/learn" className="flex items-center gap-2 font-bold">
             <span className="text-primary">⚛</span>
@@ -56,7 +57,7 @@ export function TopBar() {
 export function BottomNav() {
   const path = usePathname();
   return (
-    <nav className="sticky bottom-0 z-20 bg-white border-t border-border">
+    <nav className="sticky bottom-0 z-20 backdrop-blur border-border">
       <ul className="mx-auto max-w-4xl flex">
         {TABS.map((t) => {
           const active = path?.startsWith(t.href);

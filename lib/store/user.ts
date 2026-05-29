@@ -17,6 +17,7 @@ type UserStore = {
   heartsDate: string | null;       // YYYY-MM-DD of last refill
   completedTopics: string[];       // topic ids the user has finished
   puzzleDoneDate: string | null;   // YYYY-MM-DD the daily Element Match was last completed
+  themeMode: "light" | "dark";
   hydrated: boolean;
   setProfile: (p: Profile) => void;
   loseHeart: () => void;
@@ -29,6 +30,7 @@ type UserStore = {
   isPuzzleDoneToday: () => boolean;
   signIn: (username: string, email?: string) => void;
   signOut: () => void;
+  setThemeMode: (mode: "light" | "dark") => void;
   changePassword: (newPassword: string) => Promise<boolean>;
 };
 
@@ -57,11 +59,13 @@ export const useUser = create<UserStore>()(
       heartsDate: null,
       completedTopics: [],
       puzzleDoneDate: null,
+      themeMode: "light",
       hydrated: false,
       setProfile: (p) => set({ profile: p }),
       loseHeart: () => set({ hearts: Math.max(0, get().hearts - 1) }),
       refillHearts: () => set({ hearts: HEART_CAP, heartsDate: today() }),
       gainHeart: () => set({ hearts: Math.min(HEART_CAP, get().hearts + 1) }),
+      setThemeMode: (mode) => set({ themeMode: mode }),
 
       // Roll over anything that resets on a calendar boundary. Run on app load.
       checkDaily: () => {
