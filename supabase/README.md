@@ -50,7 +50,7 @@ reloads. The leaderboard merges real users with the seeded ones.
 
 - Hearts are intentionally **not** persisted to the cloud — they reset daily
   and aren't part of the locked schema.
-- Topic IDs are the CED learning-objective IDs (`lo-1-1` … `lo-1-8`) used by
-  `lib/seed/ced.ts`, not the placeholder IDs in `.claude/reference/schema.md`.
-  The seed in the migration matches the running app so `lesson_completions`
-  foreign keys resolve.
+- The migration seeds the 5 topic IDs from `lib/seed/topics.ts`
+  (`atomic-structure`, `periodic-trends`, `ionic-covalent`, `vsepr`,
+  `stoichiometry`) so `lesson_completions` foreign keys resolve. Keep this
+  seed in sync if `lib/seed/topics.ts` changes.

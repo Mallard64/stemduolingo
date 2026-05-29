@@ -71,8 +71,8 @@ export function BottomNav() {
                   active ? "text-primary" : "text-ink-muted hover:text-ink"
                 )}
               >
-                <span className="text-xl" aria-hidden>{t.label}</span>
-                <span>{t.labelText}</span>
+                <span className="text-xl" aria-hidden>{t.icon}</span>
+                <span>{t.label}</span>
               </Link>
             </li>
           );
