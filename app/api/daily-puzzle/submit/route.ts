@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { puzzleForDate, todayUTC, puzzleNumber } from "@/lib/seed/puzzles";
 import { createClient } from "@/lib/supabase/server";
+import { ensureProfile } from "@/lib/supabase/profile";
 
 type Body = { groupings: string[][]; time_seconds: number; mistakes: number };
 
@@ -52,6 +53,7 @@ export async function POST(req: Request) {
       data: { user },
     } = await supabase.auth.getUser();
     if (user) {
+      await ensureProfile(supabase, user); // FK target for daily_puzzle_results
       await supabase.from("daily_puzzle_results").upsert(
         {
           user_id: user.id,

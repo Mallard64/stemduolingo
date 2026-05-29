@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { ensureProfile } from "@/lib/supabase/profile";
 import { calculateLessonXP } from "@/lib/scoring";
 
 type Body = {
@@ -42,6 +43,10 @@ export async function POST(req: Request) {
       : baseXp;
   const t = todayUTC();
 
+  // Profile MUST exist before inserting a completion (FK target). This backfills
+  // accounts created before the signup trigger.
+  await ensureProfile(supabase, user);
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("id, total_xp, current_streak, last_active_date")
@@ -61,27 +66,22 @@ export async function POST(req: Request) {
   }
   const newTotalXp = prevXp + xpEarned;
 
-  await supabase.from("lesson_completions").insert({
+  const { error: completionError } = await supabase.from("lesson_completions").insert({
     user_id: user.id,
     topic_id: body.topic_id,
     xp_earned: xpEarned,
     hearts_remaining: hearts,
   });
+  if (completionError) {
+    return NextResponse.json({ error: completionError.message }, { status: 500 });
+  }
 
-  if (profile) {
-    await supabase
-      .from("profiles")
-      .update({ total_xp: newTotalXp, current_streak: newStreak, last_active_date: t })
-      .eq("id", user.id);
-  } else {
-    // Trigger hasn't created the profile yet — insert with a collision-safe username.
-    await supabase.from("profiles").insert({
-      id: user.id,
-      username: `${user.email?.split("@")[0] ?? "learner"}-${user.id.slice(0, 4)}`,
-      total_xp: newTotalXp,
-      current_streak: newStreak,
-      last_active_date: t,
-    });
+  const { error: profileError } = await supabase
+    .from("profiles")
+    .update({ total_xp: newTotalXp, current_streak: newStreak, last_active_date: t })
+    .eq("id", user.id);
+  if (profileError) {
+    return NextResponse.json({ error: profileError.message }, { status: 500 });
   }
 
   return NextResponse.json({
