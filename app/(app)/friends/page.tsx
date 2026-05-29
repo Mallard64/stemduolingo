@@ -51,13 +51,13 @@ export default function FriendsPage() {
       <section className="mb-8">
         <h2 className="text-lg font-bold mb-3">Friend requests</h2>
         {incomingFriendRequests.length === 0 ? (
-          <div className="rounded-xl border border-border bg-white p-4 text-sm text-ink-muted">
+          <div className="rounded-xl border border-border bg-card p-4 text-sm text-ink-muted">
             No incoming requests right now.
           </div>
         ) : (
           <ul className="flex flex-col gap-2">
             {incomingFriendRequests.map((request) => (
-              <li key={request.id} className="flex items-center gap-3 rounded-xl border border-border bg-white p-3">
+              <li key={request.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
                 <span className="size-10 rounded-full grid place-items-center bg-surface font-bold">
                   {request.from.slice(0, 1).toUpperCase()}
                 </span>
@@ -90,7 +90,7 @@ export default function FriendsPage() {
           <h2 className="text-lg font-bold mb-3">Sent requests</h2>
           <ul className="flex flex-col gap-2">
             {outgoingFriendRequests.map((request) => (
-              <li key={request.id} className="flex items-center gap-3 rounded-xl border border-border bg-white p-3">
+              <li key={request.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
                 <span className="size-10 rounded-full grid place-items-center bg-primary-light text-primary font-bold">
                   {request.from.slice(0, 1).toUpperCase()}
                 </span>
@@ -108,7 +108,7 @@ export default function FriendsPage() {
       <h2 className="text-lg font-bold mb-3">Your circle</h2>
       <ol className="flex flex-col gap-2">
         {friends.map((friend) => (
-          <li key={friend.username} className="flex items-center gap-3 rounded-xl border border-border bg-white p-3">
+          <li key={friend.username} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
             <span className="size-10 rounded-full grid place-items-center bg-primary-light text-primary font-bold">
               {friend.username.slice(0, 1).toUpperCase()}
             </span>

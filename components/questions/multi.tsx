@@ -44,7 +44,7 @@ export function Multi({
                 className={cn(
                   "w-full text-left p-4 rounded-xl border-2 font-medium transition flex items-center gap-3",
                   !submitted && isPicked && "border-primary bg-primary-light",
-                  !submitted && !isPicked && "border-border hover:border-ink-subtle bg-white",
+                  !submitted && !isPicked && "border-border hover:border-ink-subtle bg-card",
                   submitted && isCorrect && "border-success bg-success/10",
                   submitted && isPicked && !isCorrect && "border-error bg-error/10"
                 )}
