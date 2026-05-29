@@ -8,7 +8,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const profile = useUser((s) => s.profile);
   const hydrated = useUser((s) => s.hydrated);
+  const hydrate = useUser((s) => s.hydrate);
   const checkDaily = useUser((s) => s.checkDaily);
+
+  useEffect(() => {
+    hydrate();
+  }, [hydrate]);
 
   useEffect(() => {
     if (!hydrated) return;

@@ -57,7 +57,20 @@ export default function DailyPuzzlePage() {
       setMistakes(nextMistakes);
       setSelected([]);
       setSubmitting(false);
-      if (nextMistakes >= 4) completePuzzle(); // failing locks the puzzle until tomorrow
+      if (nextMistakes >= 4) {
+        completePuzzle(); // failing locks the puzzle until tomorrow
+        // Record the failed attempt so the lock persists across devices.
+        const time = Math.round((Date.now() - startedAt.current) / 1000);
+        fetch("/api/daily-puzzle/submit", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            groupings: solved.map((g) => g.items),
+            time_seconds: time,
+            mistakes: nextMistakes,
+          }),
+        }).catch(() => {});
+      }
       return;
     }
 

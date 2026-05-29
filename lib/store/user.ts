@@ -2,6 +2,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { calculateLessonXP } from "@/lib/scoring";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { cloudChangePassword, cloudSignOut, loadUserState } from "@/lib/supabase/data";
 import type { Profile } from "@/lib/types";
 
 type LessonResult = {
@@ -19,6 +21,7 @@ type UserStore = {
   puzzleDoneDate: string | null;   // YYYY-MM-DD the daily Element Match was last completed
   hydrated: boolean;
   setProfile: (p: Profile) => void;
+  hydrate: () => Promise<void>;     // load from cloud (or local) on app start
   loseHeart: () => void;
   refillHearts: () => void;
   gainHeart: () => void;
@@ -28,7 +31,7 @@ type UserStore = {
   isTopicCompleted: (topicId: string) => boolean;
   isPuzzleDoneToday: () => boolean;
   signIn: (username: string, email?: string) => void;
-  signOut: () => void;
+  signOut: () => Promise<void>;
   changePassword: (newPassword: string) => Promise<boolean>;
 };
 
@@ -49,6 +52,8 @@ const localProfile = (username: string, email?: string): Profile => ({
   total_xp: 0,
 });
 
+let hydrating = false;
+
 export const useUser = create<UserStore>()(
   persist(
     (set, get) => ({
@@ -59,6 +64,34 @@ export const useUser = create<UserStore>()(
       puzzleDoneDate: null,
       hydrated: false,
       setProfile: (p) => set({ profile: p }),
+
+      // Runs once on app load. In cloud mode it pulls the authoritative state
+      // from Supabase (overwriting any stale local copy). In local-only mode
+      // the values rehydrated from localStorage by `persist` are kept as-is.
+      hydrate: async () => {
+        if (get().hydrated || hydrating) return;
+        hydrating = true;
+        try {
+          if (isSupabaseConfigured) {
+            const state = await loadUserState();
+            if (state) {
+              set({
+                profile: state.profile,
+                completedTopics: state.completedTopics,
+                puzzleDoneDate: state.puzzleDoneDate,
+              });
+            } else {
+              set({ profile: null }); // configured but signed out
+            }
+          }
+        } catch {
+          // Network/Supabase hiccup — fall back to whatever is local.
+        } finally {
+          set({ hydrated: true });
+          hydrating = false;
+        }
+      },
+
       loseHeart: () => set({ hearts: Math.max(0, get().hearts - 1) }),
       refillHearts: () => set({ hearts: HEART_CAP, heartsDate: today() }),
       gainHeart: () => set({ hearts: Math.min(HEART_CAP, get().hearts + 1) }),
@@ -95,10 +128,36 @@ export const useUser = create<UserStore>()(
           streakExtended = true;
         }
 
+        // Optimistic local update for instant UI.
         set({
           completedTopics,
           profile: { ...p, total_xp: newTotalXP, current_streak: newStreak, last_active_date: t },
         });
+
+        // Persist to the cloud (server is authoritative; reconcile its numbers).
+        if (isSupabaseConfigured) {
+          fetch("/api/lessons/complete", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ topic_id: topicId, hearts_remaining: heartsRemaining, time_seconds: 0 }),
+          })
+            .then((r) => (r.ok ? r.json() : null))
+            .then((data) => {
+              if (!data) return;
+              const cur = get().profile;
+              if (!cur) return;
+              set({
+                profile: {
+                  ...cur,
+                  total_xp: data.new_total_xp ?? cur.total_xp,
+                  current_streak: data.new_streak ?? cur.current_streak,
+                  last_active_date: t,
+                },
+              });
+            })
+            .catch(() => {});
+        }
+
         return { xpEarned, newTotalXP, newStreak, streakExtended };
       },
 
@@ -106,6 +165,8 @@ export const useUser = create<UserStore>()(
       isTopicCompleted: (topicId) => get().completedTopics.includes(topicId),
       isPuzzleDoneToday: () => get().puzzleDoneDate === today(),
 
+      // Local-only sign in (used when Supabase isn't configured). In cloud mode
+      // the auth pages call Supabase directly and `hydrate()` loads the profile.
       signIn: (username, email?: string) =>
         set({
           profile: localProfile(username, email),
@@ -114,17 +175,23 @@ export const useUser = create<UserStore>()(
           completedTopics: [],
           puzzleDoneDate: null,
         }),
-      signOut: () => set({ profile: null }),
-      changePassword: async (newPassword) => {
-        // Mock implementation - in real app would call Supabase auth
-        return true;
+      signOut: async () => {
+        await cloudSignOut();
+        set({ profile: null, completedTopics: [], puzzleDoneDate: null });
       },
+      changePassword: async (newPassword) => cloudChangePassword(newPassword),
     }),
     {
       name: "omnistem-user",
-      onRehydrateStorage: () => (state) => {
-        if (state) state.hydrated = true;
-      },
+      // Never persist `hydrated` — it must start false each load so `hydrate()`
+      // re-pulls the authoritative state from the cloud.
+      partialize: (s) => ({
+        profile: s.profile,
+        hearts: s.hearts,
+        heartsDate: s.heartsDate,
+        completedTopics: s.completedTopics,
+        puzzleDoneDate: s.puzzleDoneDate,
+      }),
     }
   )
 );

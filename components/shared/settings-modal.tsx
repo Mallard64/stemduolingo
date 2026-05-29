@@ -38,8 +38,8 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
     }
   };
 
-  const handleLogout = () => {
-    signOut();
+  const handleLogout = async () => {
+    await signOut();
     router.replace("/");
     onClose();
   };
