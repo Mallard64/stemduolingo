@@ -29,7 +29,10 @@
     "logout_confirmation": "Are you sure you want to log out?",
     "confirm": "Confirm",
     "account_settings": "Account Settings",
-    "preferences": "Preferences"
+    "preferences": "Preferences",
+    "theme_label": "Color mode",
+    "light_mode": "Light",
+    "dark_mode": "Dark"
   },
   "auth": {
     "welcome_back": "Welcome back",
