@@ -51,8 +51,9 @@ type UserStore = {
   completePuzzle: () => void;
   isTopicCompleted: (topicId: string) => boolean;
   isPuzzleDoneToday: () => boolean;
-  signIn: (username: string) => void;
+  signIn: (username: string, email?: string) => void;
   signOut: () => void;
+  changePassword: (newPassword: string) => Promise<boolean>;
 };
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -69,9 +70,10 @@ const STORE_PRICES: Record<StoreItemId, number> = {
 const daysBetween = (from: string, to: string) =>
   Math.round((Date.parse(to) - Date.parse(from)) / 86400000);
 
-const localProfile = (username: string): Profile => ({
+const localProfile = (username: string, email?: string): Profile => ({
   id: "demo-user",
   username,
+  email: email || "",
   created_at: new Date().toISOString(),
   current_streak: 0,
   last_active_date: null,
@@ -219,9 +221,9 @@ export const useUser = create<UserStore>()(
       isTopicCompleted: (topicId) => get().completedTopics.includes(topicId),
       isPuzzleDoneToday: () => get().puzzleDoneDate === today(),
 
-      signIn: (username) =>
+      signIn: (username, email?: string) =>
         set({
-          profile: localProfile(username),
+          profile: localProfile(username, email),
           hearts: HEART_CAP,
           heartsDate: today(),
           completedTopics: [],
@@ -236,6 +238,10 @@ export const useUser = create<UserStore>()(
           xpBoostUntil: null,
         }),
       signOut: () => set({ profile: null }),
+      changePassword: async (newPassword) => {
+        // Mock implementation - in real app would call Supabase auth
+        return true;
+      },
     }),
     {
       name: "omnistem-user",
