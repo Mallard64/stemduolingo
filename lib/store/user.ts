@@ -35,11 +35,13 @@ type UserStore = {
   friendUsernames: string[];
   outgoingFriendRequests: FriendRequest[];
   incomingFriendRequests: FriendRequest[];
+  profileImages: Record<string, string>;
   streakFreezes: number;
   xpBoostUntil: string | null;
   hydrated: boolean;
   setProfile: (p: Profile) => void;
   setProfileImage: (imageUrl: string | null) => void;
+  updateProfileDetails: (details: { username: string; email: string; profileImageUrl: string | null }) => void;
   loseHeart: () => void;
   refillHearts: () => void;
   gainHeart: () => void;
@@ -73,11 +75,13 @@ const STORE_PRICES: Record<StoreItemId, number> = {
 const daysBetween = (from: string, to: string) =>
   Math.round((Date.parse(to) - Date.parse(from)) / 86400000);
 
-const localProfile = (username: string, email?: string): Profile => ({
+const profileImageKey = (username: string, email?: string) => (email || username).trim().toLowerCase();
+
+const localProfile = (username: string, email: string | undefined, imageUrl: string | null): Profile => ({
   id: "demo-user",
   username,
   email: email || "",
-  profile_image_url: null,
+  profile_image_url: imageUrl,
   created_at: new Date().toISOString(),
   current_streak: 0,
   last_active_date: null,
@@ -99,6 +103,7 @@ export const useUser = create<UserStore>()(
         { id: "req-maya", from: "Maya", sentAt: new Date().toISOString() },
         { id: "req-jordan", from: "Jordan", sentAt: new Date().toISOString() },
       ],
+      profileImages: {},
       streakFreezes: 0,
       xpBoostUntil: null,
       hydrated: false,
@@ -106,7 +111,29 @@ export const useUser = create<UserStore>()(
       setProfileImage: (imageUrl) => {
         const p = get().profile;
         if (!p) return;
-        set({ profile: { ...p, profile_image_url: imageUrl } });
+        const key = profileImageKey(p.username, p.email);
+        const nextImages = { ...get().profileImages };
+        if (imageUrl) {
+          nextImages[key] = imageUrl;
+        } else {
+          delete nextImages[key];
+        }
+        set({ profile: { ...p, profile_image_url: imageUrl }, profileImages: nextImages });
+      },
+      updateProfileDetails: ({ username, email, profileImageUrl }) => {
+        const p = get().profile;
+        if (!p) return;
+        const oldKey = profileImageKey(p.username, p.email);
+        const newKey = profileImageKey(username, email);
+        const nextImages = { ...get().profileImages };
+        delete nextImages[oldKey];
+        if (profileImageUrl) {
+          nextImages[newKey] = profileImageUrl;
+        }
+        set({
+          profile: { ...p, username, email, profile_image_url: profileImageUrl },
+          profileImages: nextImages,
+        });
       },
       loseHeart: () => set({ hearts: Math.max(0, get().hearts - 1) }),
       refillHearts: () => set({ hearts: HEART_CAP, heartsDate: today() }),
@@ -232,9 +259,10 @@ export const useUser = create<UserStore>()(
       isTopicCompleted: (topicId) => get().completedTopics.includes(topicId),
       isPuzzleDoneToday: () => get().puzzleDoneDate === today(),
 
-      signIn: (username, email?: string) =>
+      signIn: (username, email?: string) => {
+        const imageUrl = get().profileImages[profileImageKey(username, email)] ?? null;
         set({
-          profile: localProfile(username, email),
+          profile: localProfile(username, email, imageUrl),
           hearts: HEART_CAP,
           heartsDate: today(),
           completedTopics: [],
@@ -247,7 +275,8 @@ export const useUser = create<UserStore>()(
           ],
           streakFreezes: 0,
           xpBoostUntil: null,
-        }),
+        });
+      },
       signOut: () => set({ profile: null }),
       changePassword: async (newPassword) => {
         // Mock implementation - in real app would call Supabase auth
