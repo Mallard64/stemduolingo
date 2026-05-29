@@ -13,18 +13,42 @@ type LessonResult = {
   streakExtended: boolean;
 };
 
+export type FriendRequest = {
+  id: string;
+  from: string;
+  sentAt: string;
+};
+
+export type StoreItemId = "heart-refill" | "streak-freeze" | "xp-boost";
+
+type PurchaseResult = {
+  purchased: boolean;
+  spentXP: number;
+  message: string;
+};
+
 type UserStore = {
   profile: Profile | null;
   hearts: number;
   heartsDate: string | null;       // YYYY-MM-DD of last refill
   completedTopics: string[];       // topic ids the user has finished
   puzzleDoneDate: string | null;   // YYYY-MM-DD the daily Element Match was last completed
+  friendUsernames: string[];
+  outgoingFriendRequests: FriendRequest[];
+  incomingFriendRequests: FriendRequest[];
+  streakFreezes: number;
+  xpBoostUntil: string | null;
   hydrated: boolean;
   setProfile: (p: Profile) => void;
   hydrate: () => Promise<void>;     // load from cloud (or local) on app start
   loseHeart: () => void;
   refillHearts: () => void;
   gainHeart: () => void;
+  sendFriendRequest: (recipient: string) => void;
+  acceptFriendRequest: (id: string) => void;
+  declineFriendRequest: (id: string) => void;
+  purchaseStoreItem: (itemId: StoreItemId) => PurchaseResult;
+  useStreakFreeze: () => boolean;
   checkDaily: () => void;
   completeLesson: (topicId: string, heartsRemaining: number) => LessonResult;
   completePuzzle: () => void;
@@ -37,6 +61,13 @@ type UserStore = {
 
 const today = () => new Date().toISOString().slice(0, 10);
 const HEART_CAP = 5;
+const DAY_MS = 86400000;
+const XP_BOOST_MS = DAY_MS / 2;
+const STORE_PRICES: Record<StoreItemId, number> = {
+  "heart-refill": 100,
+  "streak-freeze": 200,
+  "xp-boost": 300,
+};
 
 // Whole calendar days between two YYYY-MM-DD strings (parsed as UTC midnight).
 const daysBetween = (from: string, to: string) =>
@@ -62,6 +93,14 @@ export const useUser = create<UserStore>()(
       heartsDate: null,
       completedTopics: [],
       puzzleDoneDate: null,
+      friendUsernames: ["Avery", "Sam"],
+      outgoingFriendRequests: [],
+      incomingFriendRequests: [
+        { id: "req-maya", from: "Maya", sentAt: new Date().toISOString() },
+        { id: "req-jordan", from: "Jordan", sentAt: new Date().toISOString() },
+      ],
+      streakFreezes: 0,
+      xpBoostUntil: null,
       hydrated: false,
       setProfile: (p) => set({ profile: p }),
 
@@ -95,6 +134,72 @@ export const useUser = create<UserStore>()(
       loseHeart: () => set({ hearts: Math.max(0, get().hearts - 1) }),
       refillHearts: () => set({ hearts: HEART_CAP, heartsDate: today() }),
       gainHeart: () => set({ hearts: Math.min(HEART_CAP, get().hearts + 1) }),
+      sendFriendRequest: (recipient) => {
+        const trimmed = recipient.trim();
+        if (!trimmed) return;
+        set({
+          outgoingFriendRequests: [
+            {
+              id: `sent-${Date.now()}`,
+              from: trimmed,
+              sentAt: new Date().toISOString(),
+            },
+            ...get().outgoingFriendRequests,
+          ],
+        });
+      },
+      acceptFriendRequest: (id) => {
+        const request = get().incomingFriendRequests.find((item) => item.id === id);
+        if (!request) return;
+        set({
+          friendUsernames: get().friendUsernames.includes(request.from)
+            ? get().friendUsernames
+            : [request.from, ...get().friendUsernames],
+          incomingFriendRequests: get().incomingFriendRequests.filter((item) => item.id !== id),
+        });
+      },
+      declineFriendRequest: (id) =>
+        set({ incomingFriendRequests: get().incomingFriendRequests.filter((request) => request.id !== id) }),
+      purchaseStoreItem: (itemId) => {
+        const p = get().profile;
+        const price = STORE_PRICES[itemId];
+        const canAfford = !!p && p.total_xp >= price;
+        const spentXP = canAfford ? price : 0;
+
+        if (itemId === "heart-refill") {
+          get().refillHearts();
+        }
+        if (itemId === "streak-freeze") {
+          set({ streakFreezes: get().streakFreezes + 1 });
+        }
+        if (itemId === "xp-boost") {
+          set({ xpBoostUntil: new Date(Date.now() + XP_BOOST_MS).toISOString() });
+        }
+
+        if (p && canAfford) {
+          set({ profile: { ...p, total_xp: p.total_xp - price } });
+        }
+
+        return {
+          purchased: true,
+          spentXP,
+          message: canAfford
+            ? `Purchased for ${price} XP.`
+            : `Not enough XP for the ${price} XP price, but the demo granted it anyway.`,
+        };
+      },
+      useStreakFreeze: () => {
+        const p = get().profile;
+        if (!p || p.current_streak <= 0 || get().streakFreezes <= 0) return false;
+        set({
+          streakFreezes: get().streakFreezes - 1,
+          profile: {
+            ...p,
+            last_active_date: today(),
+          },
+        });
+        return true;
+      },
 
       // Roll over anything that resets on a calendar boundary. Run on app load.
       checkDaily: () => {
@@ -104,14 +209,24 @@ export const useUser = create<UserStore>()(
         }
         // Streak breaks if a full day passed with no lesson (last active before yesterday).
         const p = get().profile;
-        if (p?.last_active_date && p.current_streak > 0 && daysBetween(p.last_active_date, t) > 1) {
+        const gap = p?.last_active_date ? daysBetween(p.last_active_date, t) : 0;
+        if (p?.last_active_date && p.current_streak > 0 && gap === 2 && get().streakFreezes > 0) {
+          set({
+            streakFreezes: get().streakFreezes - 1,
+            profile: { ...p, last_active_date: new Date(Date.parse(t) - DAY_MS).toISOString().slice(0, 10) },
+          });
+          return;
+        }
+        if (p?.last_active_date && p.current_streak > 0 && gap > 1) {
           set({ profile: { ...p, current_streak: 0 } });
         }
       },
 
       completeLesson: (topicId, heartsRemaining) => {
         const t = today();
-        const xpEarned = calculateLessonXP(heartsRemaining);
+        const xpBoostUntil = get().xpBoostUntil;
+        const xpMultiplier = xpBoostUntil && Date.parse(xpBoostUntil) > Date.now() ? 2 : 1;
+        const xpEarned = calculateLessonXP(heartsRemaining) * xpMultiplier;
         const p = get().profile;
         if (!p) return { xpEarned, newTotalXP: 0, newStreak: 0, streakExtended: false };
 
@@ -174,6 +289,14 @@ export const useUser = create<UserStore>()(
           heartsDate: today(),
           completedTopics: [],
           puzzleDoneDate: null,
+          friendUsernames: ["Avery", "Sam"],
+          outgoingFriendRequests: [],
+          incomingFriendRequests: [
+            { id: "req-maya", from: "Maya", sentAt: new Date().toISOString() },
+            { id: "req-jordan", from: "Jordan", sentAt: new Date().toISOString() },
+          ],
+          streakFreezes: 0,
+          xpBoostUntil: null,
         }),
       signOut: async () => {
         await cloudSignOut();
