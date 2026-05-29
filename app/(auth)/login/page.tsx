@@ -28,11 +28,17 @@ export default function LoginPage() {
     setLoading(true);
     const supabase = createClient()!;
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
     if (error) {
+      setLoading(false);
       setError(error.message);
       return;
     }
+    // Clear any previous account's cache, then load this account's cloud data
+    // BEFORE navigating so the app layout doesn't bounce on a null profile.
+    const u = useUser.getState();
+    u.resetLocal();
+    await u.hydrate(true);
+    setLoading(false);
     router.push("/learn");
   }
 
@@ -43,6 +49,8 @@ export default function LoginPage() {
       router.push("/learn");
       return;
     }
+    // Clear any previous account's cache before the OAuth round-trip.
+    useUser.getState().resetLocal();
     const supabase = createClient()!;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",

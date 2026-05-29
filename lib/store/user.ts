@@ -40,7 +40,8 @@ type UserStore = {
   xpBoostUntil: string | null;
   hydrated: boolean;
   setProfile: (p: Profile) => void;
-  hydrate: () => Promise<void>;     // load from cloud (or local) on app start
+  hydrate: (force?: boolean) => Promise<void>; // load from cloud (or local) on app start
+  resetLocal: () => void;           // clear all local state to a signed-out slate
   loseHeart: () => void;
   refillHearts: () => void;
   gainHeart: () => void;
@@ -104,11 +105,12 @@ export const useUser = create<UserStore>()(
       hydrated: false,
       setProfile: (p) => set({ profile: p }),
 
-      // Runs once on app load. In cloud mode it pulls the authoritative state
-      // from Supabase (overwriting any stale local copy). In local-only mode
-      // the values rehydrated from localStorage by `persist` are kept as-is.
-      hydrate: async () => {
-        if (get().hydrated || hydrating) return;
+      // Pulls authoritative state from Supabase (overwriting any stale local
+      // copy). Runs once on initial app load; pass `force` to re-pull after a
+      // login so the new account's data replaces the previous one's cache.
+      hydrate: async (force = false) => {
+        if (hydrating) return;
+        if (!force && get().hydrated) return;
         hydrating = true;
         try {
           if (isSupabaseConfigured) {
@@ -130,6 +132,26 @@ export const useUser = create<UserStore>()(
           hydrating = false;
         }
       },
+
+      // Wipe all local state back to a clean signed-out slate. Used on sign-out
+      // and before loading a different account so no cache bleeds across users.
+      resetLocal: () =>
+        set({
+          profile: null,
+          hearts: HEART_CAP,
+          heartsDate: today(),
+          completedTopics: [],
+          puzzleDoneDate: null,
+          friendUsernames: ["Avery", "Sam"],
+          outgoingFriendRequests: [],
+          incomingFriendRequests: [
+            { id: "req-maya", from: "Maya", sentAt: new Date().toISOString() },
+            { id: "req-jordan", from: "Jordan", sentAt: new Date().toISOString() },
+          ],
+          streakFreezes: 0,
+          xpBoostUntil: null,
+          hydrated: true,
+        }),
 
       loseHeart: () => set({ hearts: Math.max(0, get().hearts - 1) }),
       refillHearts: () => set({ hearts: HEART_CAP, heartsDate: today() }),
@@ -300,7 +322,7 @@ export const useUser = create<UserStore>()(
         }),
       signOut: async () => {
         await cloudSignOut();
-        set({ profile: null, completedTopics: [], puzzleDoneDate: null });
+        get().resetLocal();
       },
       changePassword: async (newPassword) => cloudChangePassword(newPassword),
     }),

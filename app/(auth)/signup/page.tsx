@@ -37,15 +37,21 @@ export default function SignupPage() {
         emailRedirectTo: `${window.location.origin}/auth/callback?next=/welcome`,
       },
     });
-    setLoading(false);
     if (error) {
+      setLoading(false);
       setError(error.message);
       return;
     }
     if (data.session) {
-      // Email confirmation is off — we're signed in immediately.
+      // Email confirmation is off — we're signed in immediately. Clear any
+      // previous cache and load this account before navigating.
+      const u = useUser.getState();
+      u.resetLocal();
+      await u.hydrate(true);
+      setLoading(false);
       router.push("/welcome");
     } else {
+      setLoading(false);
       setNotice("Check your email to confirm your account, then sign in.");
     }
   }
@@ -57,6 +63,7 @@ export default function SignupPage() {
       router.push("/welcome");
       return;
     }
+    useUser.getState().resetLocal();
     const supabase = createClient()!;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
