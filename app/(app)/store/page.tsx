@@ -22,14 +22,14 @@ const ITEMS = [
     id: "xp-boost",
     name: "2x XP boost",
     description: "Double lesson XP for the next 12 hours.",
-    price: 300,
+    price: 100,
     icon: "⚡",
   },
   {
     id: "lootbox",
     name: "Mystery Box",
     description: "Open for a random reward! Guarantees a Rare+ item every 10 boxes.",
-    price: 150,
+    price: 250,
     icon: "🎁",
   },
 ] satisfies { id: StoreItemId | "lootbox"; name: string; description: string; price: number; icon: string }[];
