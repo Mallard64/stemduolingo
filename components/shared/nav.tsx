@@ -11,9 +11,11 @@ import { useUser } from "@/lib/store/user";
 import { ThemeProvider } from "./theme-provider";
 
 const TABS = [
-  { href: "/learn", label: "📚", labelText: "Learn" },
-  { href: "/daily", label: "⚗️", labelText: "Daily" },
-  { href: "/leaderboard", label: "🏆", labelText: "Ranks" },
+  { href: "/learn", label: "Learn", icon: "📚" },
+  { href: "/friends", label: "Friends", icon: "👥" },
+  { href: "/daily", label: "Daily", icon: "⚗️" },
+  { href: "/store", label: "Store", icon: "🛒" },
+  { href: "/leaderboard", label: "Ranks", icon: "🏆" },
 ];
 
 export function TopBar() {
@@ -66,7 +68,7 @@ export function BottomNav() {
               <Link
                 href={t.href}
                 className={cn(
-                  "flex flex-col items-center py-2 text-sm font-medium",
+                  "flex flex-col items-center py-2 text-xs sm:text-sm font-medium",
                   active ? "text-primary" : "text-ink-muted hover:text-ink"
                 )}
               >
