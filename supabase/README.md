@@ -50,7 +50,7 @@ reloads. The leaderboard merges real users with the seeded ones.
 
 - Hearts are intentionally **not** persisted to the cloud — they reset daily
   and aren't part of the locked schema.
-- The migration seeds the 5 topic IDs from `lib/seed/topics.ts`
-  (`atomic-structure`, `periodic-trends`, `ionic-covalent`, `vsepr`,
-  `stoichiometry`) so `lesson_completions` foreign keys resolve. Keep this
-  seed in sync if `lib/seed/topics.ts` changes.
+- The migration seeds the CED topic IDs `lo-1-1` … `lo-1-8` (from
+  `lib/seed/ced.ts`, re-exported by `lib/seed/topics.ts`) so
+  `lesson_completions` foreign keys resolve. Keep this seed in sync if the
+  topic list changes.
