@@ -25,6 +25,28 @@ type PurchaseResult = {
   message: string;
 };
 
+// --- LOOTBOX CONFIGURATION ---
+type Rarity = "common" | "uncommon" | "rare" | "legendary";
+
+interface LootItem {
+  id: "heart-refill" | "streak-freeze" | "xp-boost" | "xp-jackpot";
+  name: string;
+  weight: number;
+  rarity: Rarity;
+  xpAmount?: number;
+}
+
+const LOOTBOX_PRICE = 150;
+const PITY_THRESHOLD = 10;
+
+const LOOT_TABLE: LootItem[] = [
+  { id: "heart-refill", name: "Heart Refill", weight: 50, rarity: "common" },
+  { id: "streak-freeze", name: "Streak Freeze", weight: 30, rarity: "uncommon" },
+  { id: "xp-boost", name: "2x XP Boost (12h)", weight: 15, rarity: "rare" },
+  { id: "xp-jackpot", name: "1,000 XP Jackpot", weight: 5, rarity: "legendary", xpAmount: 1000 },
+];
+// -----------------------------
+
 type UserStore = {
   profile: Profile | null;
   hearts: number;
@@ -37,6 +59,7 @@ type UserStore = {
   incomingFriendRequests: FriendRequest[];
   streakFreezes: number;
   xpBoostUntil: string | null;
+  lootboxPity: number;             // NEW: Tracks pulls without a Rare/Legendary
   hydrated: boolean;
   setProfile: (p: Profile) => void;
   loseHeart: () => void;
@@ -46,6 +69,7 @@ type UserStore = {
   acceptFriendRequest: (id: string) => void;
   declineFriendRequest: (id: string) => void;
   purchaseStoreItem: (itemId: StoreItemId) => PurchaseResult;
+  openLootbox: () => { success: boolean; message: string }; // NEW: Lootbox handler
   useStreakFreeze: () => boolean;
   checkDaily: () => void;
   completeLesson: (topicId: string, heartsRemaining: number) => LessonResult;
@@ -99,6 +123,7 @@ export const useUser = create<UserStore>()(
       ],
       streakFreezes: 0,
       xpBoostUntil: null,
+      lootboxPity: 0,
       hydrated: false,
       setProfile: (p) => set({ profile: p }),
       loseHeart: () => set({ hearts: Math.max(0, get().hearts - 1) }),
@@ -131,6 +156,7 @@ export const useUser = create<UserStore>()(
       },
       declineFriendRequest: (id) =>
         set({ incomingFriendRequests: get().incomingFriendRequests.filter((request) => request.id !== id) }),
+      
       purchaseStoreItem: (itemId) => {
         const p = get().profile;
         const price = STORE_PRICES[itemId];
@@ -159,6 +185,71 @@ export const useUser = create<UserStore>()(
             : `Not enough XP for the ${price} XP price, but the demo granted it anyway.`,
         };
       },
+
+      openLootbox: () => {
+        const p = get().profile;
+        if (!p) return { success: false, message: "You must be signed in to open a mystery box." };
+
+        const canAfford = p.total_xp >= LOOTBOX_PRICE;
+        const priceToDeduct = canAfford ? LOOTBOX_PRICE : 0; // Mirrors demo logic from purchaseStoreItem
+
+        // 1. Determine Pity Status
+        const currentPity = get().lootboxPity || 0;
+        const isPityPull = currentPity >= PITY_THRESHOLD - 1;
+
+        // Filter the loot table if Pity is active (guarantee Rare or Legendary)
+        const activeTable = isPityPull
+          ? LOOT_TABLE.filter((item) => item.rarity === "rare" || item.rarity === "legendary")
+          : LOOT_TABLE;
+
+        // 2. Roll weighted RNG
+        const totalWeight = activeTable.reduce((sum, item) => sum + item.weight, 0);
+        let random = Math.random() * totalWeight;
+        let wonItem = activeTable[activeTable.length - 1]; // Fallback to last item
+
+        for (const item of activeTable) {
+          if (random < item.weight) {
+            wonItem = item;
+            break;
+          }
+          random -= item.weight;
+        }
+
+        // 3. Process Pity Reset/Increment
+        const isRareOrBetter = wonItem.rarity === "rare" || wonItem.rarity === "legendary";
+        const newPity = isRareOrBetter ? 0 : currentPity + 1;
+
+        // 4. Grant Rewards using existing store actions where possible
+        let xpWinnings = 0;
+
+        if (wonItem.id === "heart-refill") {
+          get().refillHearts();
+        } else if (wonItem.id === "streak-freeze") {
+          set({ streakFreezes: get().streakFreezes + 1 });
+        } else if (wonItem.id === "xp-boost") {
+          const now = Date.now();
+          const currentBoost = get().xpBoostUntil ? Date.parse(get().xpBoostUntil) : now;
+          const newBoost = Math.max(now, currentBoost) + XP_BOOST_MS;
+          set({ xpBoostUntil: new Date(newBoost).toISOString() });
+        } else if (wonItem.id === "xp-jackpot" && wonItem.xpAmount) {
+          xpWinnings = wonItem.xpAmount;
+        }
+
+        // 5. Update XP and Pity
+        set({
+          lootboxPity: newPity,
+          profile: { ...p, total_xp: p.total_xp - priceToDeduct + xpWinnings },
+        });
+
+        const rarityIcons = { common: "🤍", uncommon: "💚", rare: "💙", legendary: "💛" };
+        const demoPrefix = canAfford ? "" : "(Demo freebie) ";
+
+        return {
+          success: true,
+          message: `${demoPrefix}Opened Mystery Box! You got: ${wonItem.name} ${rarityIcons[wonItem.rarity]}`,
+        };
+      },
+
       useStreakFreeze: () => {
         const p = get().profile;
         if (!p || p.current_streak <= 0 || get().streakFreezes <= 0) return false;
@@ -240,6 +331,7 @@ export const useUser = create<UserStore>()(
           ],
           streakFreezes: 0,
           xpBoostUntil: null,
+          lootboxPity: 0, // Reset pity on new sign in
         }),
       signOut: () => set({ profile: null }),
       changePassword: async (newPassword) => {

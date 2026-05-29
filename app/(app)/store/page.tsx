@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useUser, type StoreItemId } from "@/lib/store/user";
 
+// Ensure "lootbox" is added to your StoreItemId type in your store file!
 const ITEMS = [
   {
     id: "heart-refill",
@@ -24,14 +25,25 @@ const ITEMS = [
     price: 300,
     icon: "⚡",
   },
-] satisfies { id: StoreItemId; name: string; description: string; price: number; icon: string }[];
+  {
+    id: "lootbox",
+    name: "Mystery Box",
+    description: "Open for a random reward! Guarantees a Rare+ item every 10 boxes.",
+    price: 150,
+    icon: "🎁",
+  },
+] satisfies { id: StoreItemId | "lootbox"; name: string; description: string; price: number; icon: string }[];
 
 export default function StorePage() {
   const profile = useUser((s) => s.profile);
   const streakFreezes = useUser((s) => s.streakFreezes);
   const xpBoostUntil = useUser((s) => s.xpBoostUntil);
+  const lootboxPity = useUser((s) => s.lootboxPity); // NEW
+  
   const purchaseStoreItem = useUser((s) => s.purchaseStoreItem);
   const useStreakFreeze = useUser((s) => s.useStreakFreeze);
+  const openLootbox = useUser((s) => s.openLootbox); // NEW
+  
   const [notice, setNotice] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
 
@@ -45,9 +57,14 @@ export default function StorePage() {
     return Math.max(0, Date.parse(xpBoostUntil) - now);
   }, [now, xpBoostUntil]);
 
-  function handlePurchase(itemId: StoreItemId) {
-    const result = purchaseStoreItem(itemId);
-    setNotice(result.message);
+  function handlePurchase(itemId: string) {
+    if (itemId === "lootbox") {
+      const result = openLootbox();
+      setNotice(result.message);
+    } else {
+      const result = purchaseStoreItem(itemId as StoreItemId);
+      setNotice(result.message);
+    }
   }
 
   function handleUseFreeze() {
@@ -82,6 +99,8 @@ export default function StorePage() {
               <div className="font-semibold">{item.name}</div>
               <p className="text-sm text-ink-muted">{item.description}</p>
               <div className="text-xs font-medium text-primary mt-1">{item.price} XP</div>
+              
+              {/* Contextual UI per item */}
               {item.id === "streak-freeze" && (
                 <div className="text-xs text-ink-muted mt-1">Owned: {streakFreezes}</div>
               )}
@@ -90,14 +109,20 @@ export default function StorePage() {
                   Active: {formatRemaining(boostRemaining)} left
                 </div>
               )}
+              {item.id === "lootbox" && (
+                <div className="text-xs text-ink-muted mt-1">
+                  Pity Counter: <span className={lootboxPity >= 9 ? "text-primary font-bold" : ""}>{lootboxPity}/10</span>
+                </div>
+              )}
             </div>
+            
             <div className="flex flex-col gap-2">
               <button
                 type="button"
                 onClick={() => handlePurchase(item.id)}
                 className="btn-secondary px-4 py-2 text-sm"
               >
-                Buy
+                {item.id === "lootbox" ? "Open" : "Buy"}
               </button>
               {item.id === "streak-freeze" && (
                 <button
