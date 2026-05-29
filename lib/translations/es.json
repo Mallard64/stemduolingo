@@ -29,7 +29,10 @@
     "logout_confirmation": "¿Estás seguro de que deseas cerrar sesión?",
     "confirm": "Confirmar",
     "account_settings": "Configuración de Cuenta",
-    "preferences": "Preferencias"
+    "preferences": "Preferencias",
+    "theme_label": "Modo de color",
+    "light_mode": "Claro",
+    "dark_mode": "Oscuro"
   },
   "auth": {
     "welcome_back": "Bienvenido de vuelta",
