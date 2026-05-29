@@ -254,7 +254,7 @@ export const useUser = create<UserStore>()(
           fetch("/api/lessons/complete", {
             method: "POST",
             headers: { "content-type": "application/json" },
-            body: JSON.stringify({ topic_id: topicId, hearts_remaining: heartsRemaining, time_seconds: 0 }),
+            body: JSON.stringify({ topic_id: topicId, hearts_remaining: heartsRemaining, xp_earned: xpEarned, time_seconds: 0 }),
           })
             .then((r) => (r.ok ? r.json() : null))
             .then((data) => {
@@ -314,6 +314,11 @@ export const useUser = create<UserStore>()(
         heartsDate: s.heartsDate,
         completedTopics: s.completedTopics,
         puzzleDoneDate: s.puzzleDoneDate,
+        friendUsernames: s.friendUsernames,
+        outgoingFriendRequests: s.outgoingFriendRequests,
+        incomingFriendRequests: s.incomingFriendRequests,
+        streakFreezes: s.streakFreezes,
+        xpBoostUntil: s.xpBoostUntil,
       }),
     }
   )

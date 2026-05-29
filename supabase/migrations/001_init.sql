@@ -153,17 +153,14 @@ create trigger on_auth_user_created
   for each row execute function public.handle_new_user();
 
 -- ──────────────── Seed topics (skill tree) ────────────────
--- Must match lib/seed/ced.ts so lesson_completions.topic_id FKs resolve.
+-- Must match lib/seed/topics.ts so lesson_completions.topic_id FKs resolve.
 -- Idempotent: re-running updates titles/order without duplicating.
 insert into public.topics (id, title, description, order_index, unlock_requires) values
-  ('lo-1-1', '1.1 Moles and Molar Mass', 'Calculate quantities of a substance or its relative number of particles using dimensional analysis and the mole concept.', 1, '{}'),
-  ('lo-1-2', '1.2 Mass Spectroscopy of Elements', 'Explain the quantitative relationship between the mass spectrum of an element and the masses of the element''s isotopes.', 2, '{lo-1-1}'),
-  ('lo-1-3', '1.3 Elemental Composition of Pure Substances', 'Explain the quantitative relationship between the elemental composition by mass and the empirical formula of a pure substance.', 3, '{lo-1-2}'),
-  ('lo-1-4', '1.4 Composition of Mixtures', 'Explain the quantitative relationship between the elemental composition by mass and the composition of substances in a mixture.', 4, '{lo-1-3}'),
-  ('lo-1-5', '1.5 Atomic Structure and Electron Configuration', 'Represent the electron configuration of an element or ions of an element using the Aufbau principle.', 5, '{lo-1-4}'),
-  ('lo-1-6', '1.6 Photoelectron Spectroscopy', 'Explain the relationship between the photoelectron spectrum of an atom or ion and the electron configuration of the species.', 6, '{lo-1-5}'),
-  ('lo-1-7', '1.7 Periodic Trends', 'Explain the relationship between trends in atomic properties of elements and electronic structure and periodicity.', 7, '{lo-1-6}'),
-  ('lo-1-8', '1.8 Valence Electrons and Ionic Compounds', 'Explain the relationship between trends in the reactivity of elements and periodicity, and the formation of ionic compounds.', 8, '{lo-1-7}')
+  ('atomic-structure', 'Atomic Structure', 'Subatomic particles, isotopes, electron configuration.', 1, '{}'),
+  ('periodic-trends', 'Periodic Trends', 'Atomic radius, ionization energy, electronegativity.', 2, '{atomic-structure}'),
+  ('ionic-covalent', 'Ionic & Covalent Bonding', 'Bond types, Lewis structures, polarity.', 3, '{periodic-trends}'),
+  ('vsepr', 'Molecular Geometry (VSEPR)', 'Shapes, bond angles, molecular polarity.', 4, '{ionic-covalent}'),
+  ('stoichiometry', 'Stoichiometry', 'Balancing equations, mole conversions, limiting reactant.', 5, '{vsepr}')
 on conflict (id) do update set
   title = excluded.title,
   description = excluded.description,

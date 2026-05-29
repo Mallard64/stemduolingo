@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { calculateLessonXP } from "@/lib/scoring";
 
-type Body = { topic_id: string; hearts_remaining: number; time_seconds: number };
+type Body = {
+  topic_id: string;
+  hearts_remaining: number;
+  time_seconds: number;
+  xp_earned?: number; // client-computed (may include an XP-boost multiplier)
+};
 
 const todayUTC = () => new Date().toISOString().slice(0, 10);
 const daysBetween = (from: string, to: string) =>
@@ -28,7 +33,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "topic_id required" }, { status: 400 });
   }
   const hearts = Math.max(0, Math.min(5, Math.round(body.hearts_remaining ?? 0)));
-  const xpEarned = calculateLessonXP(hearts);
+  // Honor the client's XP if provided (covers the XP-boost store item), clamped
+  // to a sane range; otherwise fall back to the base formula.
+  const baseXp = calculateLessonXP(hearts);
+  const xpEarned =
+    typeof body.xp_earned === "number" && Number.isFinite(body.xp_earned)
+      ? Math.max(0, Math.min(200, Math.round(body.xp_earned)))
+      : baseXp;
   const t = todayUTC();
 
   const { data: profile } = await supabase
