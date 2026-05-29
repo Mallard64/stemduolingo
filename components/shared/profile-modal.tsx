@@ -19,7 +19,6 @@ export function ProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: ()
   const dragRef = useRef<{ x: number; y: number; cropX: number; cropY: number } | null>(null);
   const [activeTab, setActiveTab] = useState<"profile" | "preferences">("profile");
   const [draftUsername, setDraftUsername] = useState("");
-  const [draftEmail, setDraftEmail] = useState("");
   const [draftLanguage, setDraftLanguage] = useState<Language>("en");
   const [draftThemeMode, setDraftThemeMode] = useState<"light" | "dark">("light");
   const [sourcePreview, setSourcePreview] = useState<string | null>(null);
@@ -28,6 +27,7 @@ export function ProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: ()
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [profileMessage, setProfileMessage] = useState<string | null>(null);
   const [passwordMessage, setPasswordMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
@@ -35,7 +35,6 @@ export function ProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: ()
     if (!isOpen || !profile) return;
     setActiveTab("profile");
     setDraftUsername(profile.username);
-    setDraftEmail(profile.email);
     setDraftLanguage(language);
     setDraftThemeMode(themeMode);
     setSourcePreview(null);
@@ -44,6 +43,7 @@ export function ProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: ()
     setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
+    setProfileMessage(null);
     setPasswordMessage(null);
     setShowLogoutConfirm(false);
   }, [isOpen, language, profile, themeMode]);
@@ -76,11 +76,14 @@ export function ProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: ()
       ? await cropToSquare(sourcePreview, cropX, cropY)
       : profile.profile_image_url ?? null;
 
-    updateProfileDetails({
+    const result = updateProfileDetails({
       username: draftUsername.trim() || profile.username,
-      email: draftEmail.trim(),
       profileImageUrl: nextImage,
     });
+    if (!result.ok) {
+      setProfileMessage(result.message ?? "Could not save profile changes.");
+      return;
+    }
     setLanguage(draftLanguage);
     setThemeMode(draftThemeMode);
     onClose();
@@ -209,8 +212,13 @@ export function ProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: ()
 
               <div className="space-y-3">
                 <ProfileInput label="Username" value={draftUsername} onChange={setDraftUsername} />
-                <ProfileInput label="Email" type="email" value={draftEmail} onChange={setDraftEmail} />
+                <ProfileField label="Email" value={profile.email || "No email set"} />
               </div>
+              {profileMessage && (
+                <div className="rounded-lg border border-error/30 bg-error/10 p-3 text-sm font-medium text-error">
+                  {profileMessage}
+                </div>
+              )}
 
               <div>
                 <h3 className="font-semibold text-ink mb-4">{t("settings.change_password")}</h3>
@@ -355,6 +363,15 @@ function ProfileInput({
         className="w-full rounded-lg border border-border bg-surface p-4 text-ink focus:outline-none focus:ring-2 focus:ring-primary"
       />
     </label>
+  );
+}
+
+function ProfileField({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-sm font-medium text-ink mb-2">{label}</div>
+      <div className="rounded-lg border border-border bg-surface p-4 text-ink">{value}</div>
+    </div>
   );
 }
 

@@ -25,6 +25,11 @@ type PurchaseResult = {
   message: string;
 };
 
+type ProfileUpdateResult = {
+  ok: boolean;
+  message?: string;
+};
+
 type UserStore = {
   profile: Profile | null;
   hearts: number;
@@ -36,12 +41,14 @@ type UserStore = {
   outgoingFriendRequests: FriendRequest[];
   incomingFriendRequests: FriendRequest[];
   profileImages: Record<string, string>;
+  profileUsernames: Record<string, string>;
+  accountEmailsByUsername: Record<string, string>;
   streakFreezes: number;
   xpBoostUntil: string | null;
   hydrated: boolean;
   setProfile: (p: Profile) => void;
   setProfileImage: (imageUrl: string | null) => void;
-  updateProfileDetails: (details: { username: string; email: string; profileImageUrl: string | null }) => void;
+  updateProfileDetails: (details: { username: string; profileImageUrl: string | null }) => ProfileUpdateResult;
   loseHeart: () => void;
   refillHearts: () => void;
   gainHeart: () => void;
@@ -75,7 +82,9 @@ const STORE_PRICES: Record<StoreItemId, number> = {
 const daysBetween = (from: string, to: string) =>
   Math.round((Date.parse(to) - Date.parse(from)) / 86400000);
 
-const profileImageKey = (username: string, email?: string) => (email || username).trim().toLowerCase();
+const profileIdentityKey = (username: string, email?: string) => (email || username).trim().toLowerCase();
+const normalizeUsername = (username: string) => username.trim().toLowerCase();
+const isEmailLike = (value: string) => value.includes("@");
 
 const localProfile = (username: string, email: string | undefined, imageUrl: string | null): Profile => ({
   id: "demo-user",
@@ -104,6 +113,8 @@ export const useUser = create<UserStore>()(
         { id: "req-jordan", from: "Jordan", sentAt: new Date().toISOString() },
       ],
       profileImages: {},
+      profileUsernames: {},
+      accountEmailsByUsername: {},
       streakFreezes: 0,
       xpBoostUntil: null,
       hydrated: false,
@@ -111,7 +122,7 @@ export const useUser = create<UserStore>()(
       setProfileImage: (imageUrl) => {
         const p = get().profile;
         if (!p) return;
-        const key = profileImageKey(p.username, p.email);
+        const key = profileIdentityKey(p.username, p.email);
         const nextImages = { ...get().profileImages };
         if (imageUrl) {
           nextImages[key] = imageUrl;
@@ -120,20 +131,36 @@ export const useUser = create<UserStore>()(
         }
         set({ profile: { ...p, profile_image_url: imageUrl }, profileImages: nextImages });
       },
-      updateProfileDetails: ({ username, email, profileImageUrl }) => {
+      updateProfileDetails: ({ username, profileImageUrl }) => {
         const p = get().profile;
-        if (!p) return;
-        const oldKey = profileImageKey(p.username, p.email);
-        const newKey = profileImageKey(username, email);
+        if (!p) return { ok: false, message: "No active profile." };
+        const key = profileIdentityKey(p.username, p.email);
+        const cleanUsername = username.trim() || p.username;
+        const oldUsernameKey = normalizeUsername(p.username);
+        const newUsernameKey = normalizeUsername(cleanUsername);
+        const emailKey = p.email.trim().toLowerCase();
+        const existingEmailForUsername = get().accountEmailsByUsername[newUsernameKey];
+        if (existingEmailForUsername && existingEmailForUsername !== emailKey) {
+          return { ok: false, message: "That username is already taken." };
+        }
+
         const nextImages = { ...get().profileImages };
-        delete nextImages[oldKey];
         if (profileImageUrl) {
-          nextImages[newKey] = profileImageUrl;
+          nextImages[key] = profileImageUrl;
+        }
+        const nextUsernames = { ...get().profileUsernames, [key]: cleanUsername };
+        const nextEmailsByUsername = { ...get().accountEmailsByUsername };
+        delete nextEmailsByUsername[oldUsernameKey];
+        if (emailKey) {
+          nextEmailsByUsername[newUsernameKey] = emailKey;
         }
         set({
-          profile: { ...p, username, email, profile_image_url: profileImageUrl },
+          profile: { ...p, username: cleanUsername, profile_image_url: profileImageUrl },
           profileImages: nextImages,
+          profileUsernames: nextUsernames,
+          accountEmailsByUsername: nextEmailsByUsername,
         });
+        return { ok: true };
       },
       loseHeart: () => set({ hearts: Math.max(0, get().hearts - 1) }),
       refillHearts: () => set({ hearts: HEART_CAP, heartsDate: today() }),
@@ -260,9 +287,23 @@ export const useUser = create<UserStore>()(
       isPuzzleDoneToday: () => get().puzzleDoneDate === today(),
 
       signIn: (username, email?: string) => {
-        const imageUrl = get().profileImages[profileImageKey(username, email)] ?? null;
+        const identifier = username.trim();
+        const explicitEmail = email?.trim();
+        const resolvedEmail =
+          explicitEmail ??
+          (isEmailLike(identifier)
+            ? identifier
+            : get().accountEmailsByUsername[normalizeUsername(identifier)] || undefined);
+        const fallbackUsername = isEmailLike(identifier) ? identifier.split("@")[0] || "you" : identifier || "you";
+        const key = profileIdentityKey(fallbackUsername, resolvedEmail);
+        const savedUsername = get().profileUsernames[key] ?? fallbackUsername;
+        const imageUrl = get().profileImages[key] ?? null;
+        const nextEmailsByUsername = { ...get().accountEmailsByUsername };
+        if (resolvedEmail) {
+          nextEmailsByUsername[normalizeUsername(savedUsername)] = resolvedEmail.toLowerCase();
+        }
         set({
-          profile: localProfile(username, email, imageUrl),
+          profile: localProfile(savedUsername, resolvedEmail, imageUrl),
           hearts: HEART_CAP,
           heartsDate: today(),
           completedTopics: [],
@@ -275,6 +316,7 @@ export const useUser = create<UserStore>()(
           ],
           streakFreezes: 0,
           xpBoostUntil: null,
+          accountEmailsByUsername: nextEmailsByUsername,
         });
       },
       signOut: () => set({ profile: null }),

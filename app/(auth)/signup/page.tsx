@@ -8,11 +8,11 @@ export default function SignupPage() {
   const router = useRouter();
   const signIn = useUser((s) => s.signIn);
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    const username = email.split("@")[0] || "you";
-    signIn(username, email);
+    signIn(username.trim() || email.split("@")[0] || "you", email);
     router.push("/welcome");
   }
 
@@ -27,6 +27,14 @@ export default function SignupPage() {
         <h1 className="text-2xl font-bold mb-1">Create your account</h1>
         <p className="text-sm text-ink-muted mb-6">Start your AP Chem journey.</p>
         <form onSubmit={submit} className="flex flex-col gap-3">
+          <input
+            type="text"
+            required
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            className="rounded-lg border border-border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+          />
           <input
             type="email"
             required

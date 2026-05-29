@@ -7,12 +7,11 @@ import { useUser } from "@/lib/store/user";
 export default function LoginPage() {
   const router = useRouter();
   const signIn = useUser((s) => s.signIn);
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    const username = email.split("@")[0] || "you";
-    signIn(username, email);
+    signIn(identifier);
     router.push("/learn");
   }
 
@@ -28,11 +27,11 @@ export default function LoginPage() {
         <p className="text-sm text-ink-muted mb-6">Sign in to continue your streak.</p>
         <form onSubmit={submit} className="flex flex-col gap-3">
           <input
-            type="email"
+            type="text"
             required
-            placeholder="you@school.edu"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Username or email"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
             className="rounded-lg border border-border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
           />
           <input
