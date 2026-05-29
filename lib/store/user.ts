@@ -89,7 +89,7 @@ const XP_BOOST_MS = DAY_MS / 2;
 const STORE_PRICES: Record<StoreItemId, number> = {
   "heart-refill": 100,
   "streak-freeze": 200,
-  "xp-boost": 300,
+  "xp-boost": 100,
 };
 
 // Whole calendar days between two YYYY-MM-DD strings (parsed as UTC midnight).
