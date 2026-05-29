@@ -31,6 +31,7 @@ type UserStore = {
   heartsDate: string | null;       // YYYY-MM-DD of last refill
   completedTopics: string[];       // topic ids the user has finished
   puzzleDoneDate: string | null;   // YYYY-MM-DD the daily Element Match was last completed
+  themeMode: "light" | "dark";
   friendUsernames: string[];
   outgoingFriendRequests: FriendRequest[];
   incomingFriendRequests: FriendRequest[];
@@ -53,6 +54,7 @@ type UserStore = {
   isPuzzleDoneToday: () => boolean;
   signIn: (username: string, email?: string) => void;
   signOut: () => void;
+  setThemeMode: (mode: "light" | "dark") => void;
   changePassword: (newPassword: string) => Promise<boolean>;
 };
 
@@ -88,6 +90,7 @@ export const useUser = create<UserStore>()(
       heartsDate: null,
       completedTopics: [],
       puzzleDoneDate: null,
+      themeMode: "light",
       friendUsernames: ["Avery", "Sam"],
       outgoingFriendRequests: [],
       incomingFriendRequests: [
@@ -101,6 +104,7 @@ export const useUser = create<UserStore>()(
       loseHeart: () => set({ hearts: Math.max(0, get().hearts - 1) }),
       refillHearts: () => set({ hearts: HEART_CAP, heartsDate: today() }),
       gainHeart: () => set({ hearts: Math.min(HEART_CAP, get().hearts + 1) }),
+      setThemeMode: (mode) => set({ themeMode: mode }),
       sendFriendRequest: (recipient) => {
         const trimmed = recipient.trim();
         if (!trimmed) return;

@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { TopBar, BottomNav } from "@/components/shared/nav";
 import { useUser } from "@/lib/store/user";
+import { ThemeProvider } from "@/components/shared/theme-provider";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -26,9 +27,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <TopBar />
-      <main className="flex-1 mx-auto w-full max-w-3xl px-4 py-6">{children}</main>
-      <BottomNav />
+        <TopBar />
+        <main className="flex-1 mx-auto w-full max-w-3xl px-4 py-6">{children}</main>
+        <BottomNav />
     </div>
   );
 }
