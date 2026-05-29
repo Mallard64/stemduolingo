@@ -20,7 +20,15 @@ export default function FriendsPage() {
   const friends = useMemo(
     () => [
       ...(profile
-        ? [{ username: profile.username, streak: profile.current_streak, xp: profile.total_xp, isYou: true }]
+        ? [
+            {
+              username: profile.username,
+              streak: profile.current_streak,
+              xp: profile.total_xp,
+              imageUrl: profile.profile_image_url ?? null,
+              isYou: true,
+            },
+          ]
         : []),
       ...friendUsernames.map((username) => ({
         username,
@@ -109,9 +117,7 @@ export default function FriendsPage() {
       <ol className="flex flex-col gap-2">
         {friends.map((friend) => (
           <li key={friend.username} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
-            <span className="size-10 rounded-full grid place-items-center bg-primary-light text-primary font-bold">
-              {friend.username.slice(0, 1).toUpperCase()}
-            </span>
+            <FriendAvatar username={friend.username} imageUrl={"imageUrl" in friend ? friend.imageUrl : null} />
             <span className="flex-1 font-medium">
               {friend.username}
               {"isYou" in friend && friend.isYou && <span className="ml-2 text-xs text-primary">(you)</span>}
@@ -122,5 +128,13 @@ export default function FriendsPage() {
         ))}
       </ol>
     </div>
+  );
+}
+
+function FriendAvatar({ username, imageUrl }: { username: string; imageUrl?: string | null }) {
+  return (
+    <span className="size-10 overflow-hidden rounded-full grid place-items-center bg-primary-light text-primary font-bold">
+      {imageUrl ? <img src={imageUrl} alt="" className="size-full object-cover" /> : username.slice(0, 1).toUpperCase()}
+    </span>
   );
 }
