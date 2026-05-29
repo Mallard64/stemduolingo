@@ -7,17 +7,18 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 export async function ensureProfile(
   supabase: SupabaseClient,
   user: { id: string; email?: string | null }
-): Promise<void> {
+): Promise<{ error: string | null }> {
   const { data } = await supabase
     .from("profiles")
     .select("id")
     .eq("id", user.id)
     .maybeSingle();
-  if (data) return;
+  if (data) return { error: null };
 
   const base = user.email?.split("@")[0]?.replace(/[^a-z0-9_]+/gi, "_") || "learner";
-  await supabase.from("profiles").insert({
+  const { error } = await supabase.from("profiles").insert({
     id: user.id,
     username: `${base}-${user.id.slice(0, 4)}`,
   });
+  return { error: error?.message ?? null };
 }
