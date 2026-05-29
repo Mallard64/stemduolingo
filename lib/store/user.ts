@@ -39,6 +39,7 @@ type UserStore = {
   xpBoostUntil: string | null;
   hydrated: boolean;
   setProfile: (p: Profile) => void;
+  setProfileImage: (imageUrl: string | null) => void;
   loseHeart: () => void;
   refillHearts: () => void;
   gainHeart: () => void;
@@ -76,6 +77,7 @@ const localProfile = (username: string, email?: string): Profile => ({
   id: "demo-user",
   username,
   email: email || "",
+  profile_image_url: null,
   created_at: new Date().toISOString(),
   current_streak: 0,
   last_active_date: null,
@@ -101,6 +103,11 @@ export const useUser = create<UserStore>()(
       xpBoostUntil: null,
       hydrated: false,
       setProfile: (p) => set({ profile: p }),
+      setProfileImage: (imageUrl) => {
+        const p = get().profile;
+        if (!p) return;
+        set({ profile: { ...p, profile_image_url: imageUrl } });
+      },
       loseHeart: () => set({ hearts: Math.max(0, get().hearts - 1) }),
       refillHearts: () => set({ hearts: HEART_CAP, heartsDate: today() }),
       gainHeart: () => set({ hearts: Math.min(HEART_CAP, get().hearts + 1) }),

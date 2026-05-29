@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { StreakBadge } from "./streak-badge";
 import { XPBar } from "./xp-bar";
 import { HeartsDisplay } from "./hearts-display";
-import { SettingsModal } from "./settings-modal";
+import { ProfileModal } from "./profile-modal";
 import { useUser } from "@/lib/store/user";
 
 const TABS = [
@@ -18,8 +18,10 @@ const TABS = [
 ];
 
 export function TopBar() {
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profile = useUser((s) => s.profile);
   const refillHearts = useUser((s) => s.refillHearts);
+  const profileImageUrl = profile?.profile_image_url;
   
   return (
     <>
@@ -40,17 +42,21 @@ export function TopBar() {
               +5 ❤️
             </button>
             <button
-              onClick={() => setSettingsOpen(true)}
-              className="text-2xl hover:opacity-70 transition p-2"
-              aria-label="Settings"
-              title="Settings"
+              onClick={() => setProfileOpen(true)}
+              className="grid size-10 place-items-center overflow-hidden rounded-full border border-border bg-surface font-bold text-primary transition hover:border-primary"
+              aria-label="Profile"
+              title="Profile"
             >
-              ⚙️
+              {profileImageUrl ? (
+                <img src={profileImageUrl} alt="" className="size-full object-cover" />
+              ) : (
+                <span>{profile?.username?.slice(0, 1).toUpperCase() ?? "U"}</span>
+              )}
             </button>
           </div>
         </div>
       </header>
-      <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <ProfileModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
     </>
   );
 }
