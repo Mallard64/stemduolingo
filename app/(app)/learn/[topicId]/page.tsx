@@ -72,16 +72,21 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
     };
   }, [topicId, currentIndex, cache, difficulty, expected, pushQuestion, retryTick]);
 
-  if (hearts <= 0) {
-    router.replace(`/learn/${params.topicId}/failed`);
-    return null;
-  }
+  // Terminal states: out of hearts, or all questions answered.
+  const outOfHearts = hearts <= 0;
+  const lessonDone = !!topicId && currentIndex >= expected;
 
-  if (topicId && currentIndex >= expected) {
-    const time = Math.round((Date.now() - startedAt) / 1000);
-    router.replace(`/learn/${params.topicId}/complete?hearts=${hearts}&time=${time}`);
-    return null;
-  }
+  // Navigate away in an effect — never call router.replace during render.
+  useEffect(() => {
+    if (outOfHearts) {
+      router.replace(`/learn/${params.topicId}/failed`);
+    } else if (lessonDone) {
+      const time = Math.round((Date.now() - startedAt) / 1000);
+      router.replace(`/learn/${params.topicId}/complete?hearts=${hearts}&time=${time}`);
+    }
+  }, [outOfHearts, lessonDone, router, params.topicId, hearts, startedAt]);
+
+  if (outOfHearts || lessonDone) return null;
 
   const q = cache[currentIndex] as (MCQQuestion & { difficulty: number; source: "ai" | "fallback" }) | undefined;
 
