@@ -33,7 +33,7 @@ export function MCQ({
               disabled={disabled || picked !== null}
               className={cn(
                 "w-full text-left p-4 rounded-xl border-2 font-medium transition",
-                !reveal && "border-border hover:border-ink-subtle bg-white",
+                !reveal && "border-border hover:border-ink-subtle bg-card",
                 reveal && isCorrect && "border-success bg-success/10",
                 reveal && isPicked && !isCorrect && "border-error bg-error/10 animate-shake"
               )}

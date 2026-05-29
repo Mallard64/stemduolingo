@@ -47,7 +47,7 @@ export default function LeaderboardPage() {
               "flex items-center gap-3 p-3 rounded-xl border",
               u.is_current_user
                 ? "border-primary bg-primary-light/40"
-                : "border-border bg-white"
+                : "border-border bg-card"
             )}
           >
             <span

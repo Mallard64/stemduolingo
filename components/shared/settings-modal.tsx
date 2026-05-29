@@ -50,9 +50,9 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 grid place-items-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-card rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-border p-6 flex items-center justify-between">
+        <div className="sticky top-0 bg-card border-b border-border p-6 flex items-center justify-between">
           <h2 className="text-2xl font-bold">{t("settings.title")}</h2>
           <button
             onClick={onClose}
@@ -140,8 +140,8 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
                   <div
                     className={`mt-3 p-3 rounded-lg text-sm font-medium ${
                       passwordMessage.type === "success"
-                        ? "bg-green-50 text-green-700 border border-green-200"
-                        : "bg-red-50 text-red-700 border border-red-200"
+                        ? "bg-success/10 text-success border border-success/30"
+                        : "bg-error/10 text-error border border-error/30"
                     }`}
                   >
                     {passwordMessage.text}
@@ -163,7 +163,7 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
                       </button>
                       <button
                         onClick={handleLogout}
-                        className="flex-1 bg-error text-white rounded-lg px-4 py-2 font-medium hover:bg-red-600 transition"
+                        className="flex-1 bg-error text-white rounded-lg px-4 py-2 font-medium hover:bg-error/80 transition"
                       >
                         {t("settings.confirm")}
                       </button>

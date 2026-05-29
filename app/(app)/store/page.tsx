@@ -64,7 +64,7 @@ export default function StorePage() {
       <h1 className="text-2xl font-bold mb-1">Store</h1>
       <p className="text-ink-muted text-sm mb-6">Spend rewards on helpful study boosts.</p>
 
-      <div className="mb-4 rounded-xl border border-border bg-white p-4">
+      <div className="mb-4 rounded-xl border border-border bg-card p-4">
         <div className="flex items-center justify-between gap-3">
           <span className="text-sm font-medium text-ink-muted">Available XP</span>
           <span className="text-xl font-bold tabular-nums">{(profile?.total_xp ?? 0).toLocaleString()}</span>

@@ -8,7 +8,6 @@ import { XPBar } from "./xp-bar";
 import { HeartsDisplay } from "./hearts-display";
 import { SettingsModal } from "./settings-modal";
 import { useUser } from "@/lib/store/user";
-import { ThemeProvider } from "./theme-provider";
 
 const TABS = [
   { href: "/learn", label: "Learn", icon: "📚" },
@@ -24,7 +23,7 @@ export function TopBar() {
   
   return (
     <>
-      <header className="sticky top-0 z-20 backdrop-blur border-border">
+      <header className="sticky top-0 z-20 border-b border-border bg-card/90 backdrop-blur">
         <div className="mx-auto max-w-3xl px-4 py-3 flex items-center justify-between">
           <Link href="/learn" className="flex items-center gap-2 font-bold">
             <span className="text-primary">⚛</span>
@@ -36,7 +35,7 @@ export function TopBar() {
             <XPBar />
             <button
               onClick={refillHearts}
-              className="text-xs px-2 py-1 rounded bg-amber-100 text-amber-900 hover:bg-amber-200 font-medium"
+              className="text-xs px-2 py-1 rounded border border-warning/30 bg-warning/10 text-warning hover:bg-warning/20 font-medium"
             >
               +5 ❤️
             </button>
@@ -59,7 +58,7 @@ export function TopBar() {
 export function BottomNav() {
   const path = usePathname();
   return (
-    <nav className="sticky bottom-0 z-20 backdrop-blur border-border">
+    <nav className="sticky bottom-0 z-20 border-t border-border bg-card/90 backdrop-blur">
       <ul className="mx-auto max-w-4xl flex">
         {TABS.map((t) => {
           const active = path?.startsWith(t.href);
@@ -72,8 +71,8 @@ export function BottomNav() {
                   active ? "text-primary" : "text-ink-muted hover:text-ink"
                 )}
               >
-                <span className="text-xl" aria-hidden>{t.label}</span>
-                <span>{t.labelText}</span>
+                <span className="text-xl" aria-hidden>{t.icon}</span>
+                <span>{t.label}</span>
               </Link>
             </li>
           );

@@ -173,7 +173,7 @@ export default function DailyPuzzlePage() {
                 "aspect-square rounded-xl border-2 font-semibold text-sm sm:text-base transition px-1",
                 isPicked
                   ? "bg-primary text-white border-primary scale-[0.97]"
-                  : "bg-white border-border hover:border-ink-subtle"
+                  : "bg-card border-border hover:border-ink-subtle"
               )}
             >
               {item}
