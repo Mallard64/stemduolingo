@@ -36,7 +36,7 @@ interface LootItem {
   xpAmount?: number;
 }
 
-const LOOTBOX_PRICE = 150;
+const LOOTBOX_PRICE = 250;
 const PITY_THRESHOLD = 10;
 
 const LOOT_TABLE: LootItem[] = [
