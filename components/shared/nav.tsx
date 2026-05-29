@@ -1,40 +1,55 @@
 "use client";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { StreakBadge } from "./streak-badge";
 import { XPBar } from "./xp-bar";
 import { HeartsDisplay } from "./hearts-display";
+import { SettingsModal } from "./settings-modal";
 import { useUser } from "@/lib/store/user";
 
 const TABS = [
-  { href: "/learn", label: "Learn", icon: "📚" },
-  { href: "/daily", label: "Daily", icon: "⚗️" },
-  { href: "/leaderboard", label: "Ranks", icon: "🏆" },
+  { href: "/learn", label: "📚", labelText: "Learn" },
+  { href: "/daily", label: "⚗️", labelText: "Daily" },
+  { href: "/leaderboard", label: "🏆", labelText: "Ranks" },
 ];
 
 export function TopBar() {
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const refillHearts = useUser((s) => s.refillHearts);
+  
   return (
-    <header className="sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-border">
-      <div className="mx-auto max-w-3xl px-4 py-3 flex items-center justify-between">
-        <Link href="/learn" className="flex items-center gap-2 font-bold">
-          <span className="text-primary">⚛</span>
-          <span>OmniSTEM</span>
-        </Link>
-        <div className="flex items-center gap-4">
-          <HeartsDisplay />
-          <StreakBadge />
-          <XPBar />
-          <button
-            onClick={refillHearts}
-            className="text-xs px-2 py-1 rounded bg-amber-100 text-amber-900 hover:bg-amber-200 font-medium"
-          >
-            +5 ❤️
-          </button>
+    <>
+      <header className="sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-border">
+        <div className="mx-auto max-w-3xl px-4 py-3 flex items-center justify-between">
+          <Link href="/learn" className="flex items-center gap-2 font-bold">
+            <span className="text-primary">⚛</span>
+            <span>OmniSTEM</span>
+          </Link>
+          <div className="flex items-center gap-4">
+            <HeartsDisplay />
+            <StreakBadge />
+            <XPBar />
+            <button
+              onClick={refillHearts}
+              className="text-xs px-2 py-1 rounded bg-amber-100 text-amber-900 hover:bg-amber-200 font-medium"
+            >
+              +5 ❤️
+            </button>
+            <button
+              onClick={() => setSettingsOpen(true)}
+              className="text-2xl hover:opacity-70 transition p-2"
+              aria-label="Settings"
+              title="Settings"
+            >
+              ⚙️
+            </button>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+      <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+    </>
   );
 }
 
@@ -54,8 +69,8 @@ export function BottomNav() {
                   active ? "text-primary" : "text-ink-muted hover:text-ink"
                 )}
               >
-                <span className="text-xl" aria-hidden>{t.icon}</span>
-                <span>{t.label}</span>
+                <span className="text-xl" aria-hidden>{t.label}</span>
+                <span>{t.labelText}</span>
               </Link>
             </li>
           );
