@@ -42,24 +42,6 @@ export default function LoginPage() {
     router.push("/learn");
   }
 
-  async function google() {
-    setError(null);
-    if (!isSupabaseConfigured) {
-      signIn("you", "user@gmail.com");
-      router.push("/learn");
-      return;
-    }
-    // Clear any previous account's cache before the OAuth round-trip.
-    useUser.getState().resetLocal();
-    const supabase = createClient()!;
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=/learn` },
-    });
-    if (error) setError(error.message);
-    // On success the browser is redirected to Google.
-  }
-
   return (
     <main className="min-h-screen grid place-items-center px-6">
       <div className="card w-full max-w-sm">
@@ -87,8 +69,6 @@ export default function LoginPage() {
             {loading ? "Signing in…" : "Sign in"}
           </button>
         </form>
-        <div className="my-4 text-center text-xs text-ink-subtle">or</div>
-        <button onClick={google} className="btn-secondary w-full">Continue with Google</button>
         <p className="text-xs text-ink-muted mt-4 text-center">
           New here? <Link className="text-primary font-medium" href="/signup">Create an account</Link>
         </p>
