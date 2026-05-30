@@ -73,12 +73,14 @@ export function BottomNav() {
               <Link
                 href={t.href}
                 className={cn(
-                  "flex flex-col items-center py-2 text-xs sm:text-sm font-medium",
+                  "flex flex-col items-center py-2 text-xs sm:text-sm font-medium gap-1",
                   active ? "text-primary" : "text-ink-muted hover:text-ink"
                 )}
               >
                 <span className="text-xl" aria-hidden>{t.icon}</span>
                 <span>{t.label}</span>
+                <span className="text-lg" aria-hidden>{t.icon}</span>
+                <span className="text-xs">{t.label}</span>
               </Link>
             </li>
           );
