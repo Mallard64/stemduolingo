@@ -2,6 +2,20 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { calculateLessonXP } from "@/lib/scoring";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
+import {
+  cloudChangePassword,
+  cloudSignOut,
+  loadUserState,
+  syncProfileState,
+} from "@/lib/supabase/data";
+import {
+  LOOTBOX_PRICE,
+  STORE_PRICES,
+  invCount,
+  type Inventory,
+  type StoreItemId,
+} from "@/lib/store/items";
 import type { DailyGameId, Profile } from "@/lib/types";
 
 export type { StoreItemId } from "@/lib/store/items";
