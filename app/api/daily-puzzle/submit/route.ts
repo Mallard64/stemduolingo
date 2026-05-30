@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { puzzleForDate, todayUTC, puzzleNumber } from "@/lib/seed/puzzles";
+import { createClient } from "@/lib/supabase/server";
+import { ensureProfile } from "@/lib/supabase/profile";
 
 type Body = { groupings: string[][]; time_seconds: number; mistakes: number };
 
@@ -43,6 +45,27 @@ export async function POST(req: Request) {
   const puzzle = puzzleForDate(date);
 
   const correct = groupingsMatch(body.groupings, puzzle.groups);
+
+  // Persist the attempt for the signed-in user (one row per user per date).
+  const supabase = createClient();
+  if (supabase) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      await ensureProfile(supabase, user); // FK target for daily_puzzle_results
+      await supabase.from("daily_puzzle_results").upsert(
+        {
+          user_id: user.id,
+          date,
+          time_seconds: Math.max(0, Math.round(body.time_seconds ?? 0)),
+          mistakes: Math.max(0, Math.round(body.mistakes ?? 0)),
+          completed: correct,
+        },
+        { onConflict: "user_id,date" }
+      );
+    }
+  }
 
   const tiles = tilesForGroups(body.groupings, puzzle.groups, correct, body.mistakes);
   const mm = Math.floor(body.time_seconds / 60);

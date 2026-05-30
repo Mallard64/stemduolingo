@@ -4,6 +4,8 @@ import { persist } from "zustand/middleware";
 import { calculateLessonXP } from "@/lib/scoring";
 import type { DailyGameId, Profile } from "@/lib/types";
 
+export type { StoreItemId } from "@/lib/store/items";
+
 type LessonResult = {
   xpEarned: number;
   newTotalXP: number;
@@ -16,8 +18,6 @@ export type FriendRequest = {
   from: string;
   sentAt: string;
 };
-
-export type StoreItemId = "heart-refill" | "streak-freeze" | "xp-boost";
 
 type PurchaseResult = {
   purchased: boolean;
@@ -36,7 +36,6 @@ interface LootItem {
   xpAmount?: number;
 }
 
-const LOOTBOX_PRICE = 250;
 const PITY_THRESHOLD = 10;
 
 const LOOT_TABLE: LootItem[] = [
@@ -58,11 +57,13 @@ type UserStore = {
   friendUsernames: string[];
   outgoingFriendRequests: FriendRequest[];
   incomingFriendRequests: FriendRequest[];
-  streakFreezes: number;
+  inventory: Inventory;            // itemId -> quantity owned (synced to Supabase)
   xpBoostUntil: string | null;
-  lootboxPity: number;             // NEW: Tracks pulls without a Rare/Legendary
+  lootboxPity: number;             // Tracks pulls without a Rare/Legendary
   hydrated: boolean;
   setProfile: (p: Profile) => void;
+  hydrate: (force?: boolean) => Promise<void>; // load from cloud (or local) on app start
+  resetLocal: () => void;           // clear all local state to a signed-out slate
   loseHeart: () => void;
   refillHearts: () => void;
   gainHeart: () => void;
@@ -72,6 +73,8 @@ type UserStore = {
   purchaseStoreItem: (itemId: StoreItemId) => PurchaseResult;
   openLootbox: () => { success: boolean; message: string }; // NEW: Lootbox handler
   useStreakFreeze: () => boolean;
+  useHeartRefill: () => boolean;   // consume a heart-refill from the inventory
+  activateXpBoost: () => boolean;  // consume an xp-boost, starting/extending the 12h timer
   checkDaily: () => void;
   completeLesson: (topicId: string, heartsRemaining: number) => LessonResult;
   completePuzzle: (gameId?: DailyGameId) => void;
@@ -79,7 +82,7 @@ type UserStore = {
   isPuzzleDoneToday: () => boolean;
   isDailyGameDoneToday: (gameId: DailyGameId) => boolean;
   signIn: (username: string, email?: string) => void;
-  signOut: () => void;
+  signOut: () => Promise<void>;
   setThemeMode: (mode: "light" | "dark") => void;
   changePassword: (newPassword: string) => Promise<boolean>;
 };
@@ -88,11 +91,6 @@ const today = () => new Date().toISOString().slice(0, 10);
 const HEART_CAP = 5;
 const DAY_MS = 86400000;
 const XP_BOOST_MS = DAY_MS / 2;
-const STORE_PRICES: Record<StoreItemId, number> = {
-  "heart-refill": 100,
-  "streak-freeze": 200,
-  "xp-boost": 100,
-};
 
 // Whole calendar days between two YYYY-MM-DD strings (parsed as UTC midnight).
 const daysBetween = (from: string, to: string) =>
@@ -107,6 +105,20 @@ const localProfile = (username: string, email?: string): Profile => ({
   last_active_date: null,
   total_xp: 0,
 });
+
+let hydrating = false;
+
+// Fire-and-forget push of the current owned-state to Supabase. Call after any
+// action that changes XP balance, inventory, the XP boost, or the pity counter.
+function pushCloudSync(state: UserStore) {
+  if (!isSupabaseConfigured || !state.profile) return;
+  void syncProfileState({
+    total_xp: state.profile.total_xp,
+    xp_boost_until: state.xpBoostUntil,
+    lootbox_pity: state.lootboxPity,
+    inventory: state.inventory,
+  });
+}
 
 export const useUser = create<UserStore>()(
   persist(
@@ -124,11 +136,64 @@ export const useUser = create<UserStore>()(
         { id: "req-maya", from: "Maya", sentAt: new Date().toISOString() },
         { id: "req-jordan", from: "Jordan", sentAt: new Date().toISOString() },
       ],
-      streakFreezes: 0,
+      inventory: {},
       xpBoostUntil: null,
       lootboxPity: 0,
       hydrated: false,
       setProfile: (p) => set({ profile: p }),
+
+      // Pulls authoritative state from Supabase (overwriting any stale local
+      // copy). Runs once on initial app load; pass `force` to re-pull after a
+      // login so the new account's data replaces the previous one's cache.
+      hydrate: async (force = false) => {
+        if (hydrating) return;
+        if (!force && get().hydrated) return;
+        hydrating = true;
+        try {
+          if (isSupabaseConfigured) {
+            const state = await loadUserState();
+            if (state) {
+              set({
+                profile: state.profile,
+                completedTopics: state.completedTopics,
+                puzzleDoneDate: state.puzzleDoneDate,
+                inventory: state.inventory,
+                xpBoostUntil: state.xpBoostUntil,
+                lootboxPity: state.lootboxPity,
+              });
+            } else {
+              set({ profile: null }); // configured but signed out
+            }
+          }
+        } catch {
+          // Network/Supabase hiccup — fall back to whatever is local.
+        } finally {
+          set({ hydrated: true });
+          hydrating = false;
+        }
+      },
+
+      // Wipe all local state back to a clean signed-out slate. Used on sign-out
+      // and before loading a different account so no cache bleeds across users.
+      resetLocal: () =>
+        set({
+          profile: null,
+          hearts: HEART_CAP,
+          heartsDate: today(),
+          completedTopics: [],
+          puzzleDoneDate: null,
+          friendUsernames: ["Avery", "Sam"],
+          outgoingFriendRequests: [],
+          incomingFriendRequests: [
+            { id: "req-maya", from: "Maya", sentAt: new Date().toISOString() },
+            { id: "req-jordan", from: "Jordan", sentAt: new Date().toISOString() },
+          ],
+          inventory: {},
+          xpBoostUntil: null,
+          lootboxPity: 0,
+          hydrated: true,
+        }),
+
       loseHeart: () => set({ hearts: Math.max(0, get().hearts - 1) }),
       refillHearts: () => set({ hearts: HEART_CAP, heartsDate: today() }),
       gainHeart: () => set({ hearts: Math.min(HEART_CAP, get().hearts + 1) }),
@@ -166,26 +231,21 @@ export const useUser = create<UserStore>()(
         const canAfford = !!p && p.total_xp >= price;
         const spentXP = canAfford ? price : 0;
 
-        if (itemId === "heart-refill") {
-          get().refillHearts();
-        }
-        if (itemId === "streak-freeze") {
-          set({ streakFreezes: get().streakFreezes + 1 });
-        }
-        if (itemId === "xp-boost") {
-          set({ xpBoostUntil: new Date(Date.now() + XP_BOOST_MS).toISOString() });
-        }
-
-        if (p && canAfford) {
-          set({ profile: { ...p, total_xp: p.total_xp - price } });
-        }
+        // Items go into the inventory rather than being consumed instantly; the
+        // user applies them from the Inventory page.
+        const inventory = { ...get().inventory, [itemId]: invCount(get().inventory, itemId) + 1 };
+        set({
+          inventory,
+          profile: p && canAfford ? { ...p, total_xp: p.total_xp - price } : p,
+        });
+        pushCloudSync(get());
 
         return {
           purchased: true,
           spentXP,
           message: canAfford
-            ? `Purchased for ${price} XP.`
-            : `Not enough XP for the ${price} XP price, but the demo granted it anyway.`,
+            ? `Purchased for ${price} XP — added to your inventory.`
+            : `Not enough XP for the ${price} XP price, but the demo added it to your inventory anyway.`,
         };
       },
 
@@ -222,27 +282,28 @@ export const useUser = create<UserStore>()(
         const isRareOrBetter = wonItem.rarity === "rare" || wonItem.rarity === "legendary";
         const newPity = isRareOrBetter ? 0 : currentPity + 1;
 
-        // 4. Grant Rewards using existing store actions where possible
+        // 4. Grant Rewards. Consumables drop into the inventory (used later);
+        //    the jackpot pays out XP directly.
         let xpWinnings = 0;
+        const inventory = { ...get().inventory };
 
-        if (wonItem.id === "heart-refill") {
-          get().refillHearts();
-        } else if (wonItem.id === "streak-freeze") {
-          set({ streakFreezes: get().streakFreezes + 1 });
-        } else if (wonItem.id === "xp-boost") {
-          const now = Date.now();
-          const currentBoost = get().xpBoostUntil ? Date.parse(get().xpBoostUntil) : now;
-          const newBoost = Math.max(now, currentBoost) + XP_BOOST_MS;
-          set({ xpBoostUntil: new Date(newBoost).toISOString() });
+        if (
+          wonItem.id === "heart-refill" ||
+          wonItem.id === "streak-freeze" ||
+          wonItem.id === "xp-boost"
+        ) {
+          inventory[wonItem.id] = invCount(inventory, wonItem.id) + 1;
         } else if (wonItem.id === "xp-jackpot" && wonItem.xpAmount) {
           xpWinnings = wonItem.xpAmount;
         }
 
-        // 5. Update XP and Pity
+        // 5. Update inventory, XP, and Pity, then sync to the cloud.
         set({
+          inventory,
           lootboxPity: newPity,
           profile: { ...p, total_xp: p.total_xp - priceToDeduct + xpWinnings },
         });
+        pushCloudSync(get());
 
         const rarityIcons = { common: "🤍", uncommon: "💚", rare: "💙", legendary: "💛" };
         const demoPrefix = canAfford ? "" : "(Demo freebie) ";
@@ -255,14 +316,40 @@ export const useUser = create<UserStore>()(
 
       useStreakFreeze: () => {
         const p = get().profile;
-        if (!p || p.current_streak <= 0 || get().streakFreezes <= 0) return false;
+        const owned = invCount(get().inventory, "streak-freeze");
+        if (!p || p.current_streak <= 0 || owned <= 0) return false;
         set({
-          streakFreezes: get().streakFreezes - 1,
-          profile: {
-            ...p,
-            last_active_date: today(),
-          },
+          inventory: { ...get().inventory, "streak-freeze": owned - 1 },
+          profile: { ...p, last_active_date: today() },
         });
+        pushCloudSync(get());
+        return true;
+      },
+
+      useHeartRefill: () => {
+        const owned = invCount(get().inventory, "heart-refill");
+        if (owned <= 0) return false;
+        set({
+          inventory: { ...get().inventory, "heart-refill": owned - 1 },
+          hearts: HEART_CAP,
+          heartsDate: today(),
+        });
+        pushCloudSync(get());
+        return true;
+      },
+
+      activateXpBoost: () => {
+        const owned = invCount(get().inventory, "xp-boost");
+        if (owned <= 0) return false;
+        // Stack onto any remaining boost time rather than overwriting it.
+        const now = Date.now();
+        const existing = get().xpBoostUntil;
+        const base = existing ? Math.max(now, Date.parse(existing)) : now;
+        set({
+          inventory: { ...get().inventory, "xp-boost": owned - 1 },
+          xpBoostUntil: new Date(base + XP_BOOST_MS).toISOString(),
+        });
+        pushCloudSync(get());
         return true;
       },
 
@@ -275,11 +362,13 @@ export const useUser = create<UserStore>()(
         // Streak breaks if a full day passed with no lesson (last active before yesterday).
         const p = get().profile;
         const gap = p?.last_active_date ? daysBetween(p.last_active_date, t) : 0;
-        if (p?.last_active_date && p.current_streak > 0 && gap === 2 && get().streakFreezes > 0) {
+        const freezesOwned = invCount(get().inventory, "streak-freeze");
+        if (p?.last_active_date && p.current_streak > 0 && gap === 2 && freezesOwned > 0) {
           set({
-            streakFreezes: get().streakFreezes - 1,
+            inventory: { ...get().inventory, "streak-freeze": freezesOwned - 1 },
             profile: { ...p, last_active_date: new Date(Date.parse(t) - DAY_MS).toISOString().slice(0, 10) },
           });
+          pushCloudSync(get());
           return;
         }
         if (p?.last_active_date && p.current_streak > 0 && gap > 1) {
@@ -308,10 +397,36 @@ export const useUser = create<UserStore>()(
           streakExtended = true;
         }
 
+        // Optimistic local update for instant UI.
         set({
           completedTopics,
           profile: { ...p, total_xp: newTotalXP, current_streak: newStreak, last_active_date: t },
         });
+
+        // Persist to the cloud (server is authoritative; reconcile its numbers).
+        if (isSupabaseConfigured) {
+          fetch("/api/lessons/complete", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ topic_id: topicId, hearts_remaining: heartsRemaining, xp_earned: xpEarned, time_seconds: 0 }),
+          })
+            .then((r) => (r.ok ? r.json() : null))
+            .then((data) => {
+              if (!data) return;
+              const cur = get().profile;
+              if (!cur) return;
+              set({
+                profile: {
+                  ...cur,
+                  total_xp: data.new_total_xp ?? cur.total_xp,
+                  current_streak: data.new_streak ?? cur.current_streak,
+                  last_active_date: t,
+                },
+              });
+            })
+            .catch(() => {});
+        }
+
         return { xpEarned, newTotalXP, newStreak, streakExtended };
       },
 
@@ -328,6 +443,8 @@ export const useUser = create<UserStore>()(
         get().dailyGameDoneDates?.[gameId] === today() ||
         (gameId === "element-match" && get().puzzleDoneDate === today()),
 
+      // Local-only sign in (used when Supabase isn't configured). In cloud mode
+      // the auth pages call Supabase directly and `hydrate()` loads the profile.
       signIn: (username, email?: string) =>
         set({
           profile: localProfile(username, email),
@@ -342,21 +459,34 @@ export const useUser = create<UserStore>()(
             { id: "req-maya", from: "Maya", sentAt: new Date().toISOString() },
             { id: "req-jordan", from: "Jordan", sentAt: new Date().toISOString() },
           ],
-          streakFreezes: 0,
+          inventory: {},
           xpBoostUntil: null,
           lootboxPity: 0, // Reset pity on new sign in
         }),
-      signOut: () => set({ profile: null }),
-      changePassword: async (newPassword) => {
-        // Mock implementation - in real app would call Supabase auth
-        return true;
+      signOut: async () => {
+        await cloudSignOut();
+        get().resetLocal();
       },
+      changePassword: async (newPassword) => cloudChangePassword(newPassword),
     }),
     {
       name: "omnistem-user",
-      onRehydrateStorage: () => (state) => {
-        if (state) state.hydrated = true;
-      },
+      // Never persist `hydrated` — it must start false each load so `hydrate()`
+      // re-pulls the authoritative state from the cloud.
+      partialize: (s) => ({
+        profile: s.profile,
+        hearts: s.hearts,
+        heartsDate: s.heartsDate,
+        completedTopics: s.completedTopics,
+        puzzleDoneDate: s.puzzleDoneDate,
+        themeMode: s.themeMode,
+        friendUsernames: s.friendUsernames,
+        outgoingFriendRequests: s.outgoingFriendRequests,
+        incomingFriendRequests: s.incomingFriendRequests,
+        inventory: s.inventory,
+        xpBoostUntil: s.xpBoostUntil,
+        lootboxPity: s.lootboxPity,
+      }),
     }
   )
 );
