@@ -222,7 +222,7 @@ export default function DailyPuzzlePage() {
 
   // Game over this session — shown before the "already done" lock so the player
   // sees the failure screen; on reload the puzzle stays locked (see below).
-  if (mistakes >= 4) {
+  if (attempts >= 4) {
     return (
       <div className="text-center py-12">
         <div className="text-6xl mb-3" aria-hidden>🧪</div>
