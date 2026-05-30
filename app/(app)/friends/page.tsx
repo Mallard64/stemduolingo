@@ -1,8 +1,16 @@
 "use client";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useUser } from "@/lib/store/user";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
+import {
+  loadFriends,
+  respondToRequest,
+  cancelRequest,
+  type FriendsData,
+} from "@/lib/supabase/friends";
 
+// Stats for the demo (local-only) friends when Supabase isn't configured.
 const FRIEND_STATS: Record<string, { streak: number; xp: number }> = {
   Maya: { streak: 12, xp: 2420 },
   Jordan: { streak: 8, xp: 1890 },
@@ -12,24 +20,82 @@ const FRIEND_STATS: Record<string, { streak: number; xp: number }> = {
 
 export default function FriendsPage() {
   const profile = useUser((s) => s.profile);
+
+  // ── Local-only (demo) fallback state from the zustand store ──
   const friendUsernames = useUser((s) => s.friendUsernames);
-  const incomingFriendRequests = useUser((s) => s.incomingFriendRequests);
-  const outgoingFriendRequests = useUser((s) => s.outgoingFriendRequests);
-  const acceptFriendRequest = useUser((s) => s.acceptFriendRequest);
-  const declineFriendRequest = useUser((s) => s.declineFriendRequest);
-  const friends = useMemo(
+  const localIncoming = useUser((s) => s.incomingFriendRequests);
+  const localOutgoing = useUser((s) => s.outgoingFriendRequests);
+  const acceptLocal = useUser((s) => s.acceptFriendRequest);
+  const declineLocal = useUser((s) => s.declineFriendRequest);
+
+  // ── Cloud state ──
+  const [cloud, setCloud] = useState<FriendsData | null>(null);
+  const [loading, setLoading] = useState(isSupabaseConfigured);
+
+  const refresh = useCallback(async () => {
+    if (!isSupabaseConfigured) return;
+    const data = await loadFriends();
+    setCloud(data ?? { friends: [], incoming: [], outgoing: [] });
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  async function accept(id: string) {
+    await respondToRequest(id, true);
+    await refresh();
+  }
+  async function decline(id: string) {
+    await respondToRequest(id, false);
+    await refresh();
+  }
+  async function cancel(id: string) {
+    await cancelRequest(id);
+    await refresh();
+  }
+
+  // ── Build the view model for whichever mode we're in ──
+  const me = profile
+    ? { username: profile.username, streak: profile.current_streak, xp: profile.total_xp, isYou: true }
+    : null;
+
+  const localFriends = useMemo(
     () => [
-      ...(profile
-        ? [{ username: profile.username, streak: profile.current_streak, xp: profile.total_xp, isYou: true }]
-        : []),
+      ...(me ? [me] : []),
       ...friendUsernames.map((username) => ({
         username,
         streak: FRIEND_STATS[username]?.streak ?? 0,
         xp: FRIEND_STATS[username]?.xp ?? 0,
+        isYou: false,
       })),
     ],
-    [friendUsernames, profile]
+    [friendUsernames, me]
   );
+
+  const friends = isSupabaseConfigured
+    ? [
+        ...(me ? [me] : []),
+        ...(cloud?.friends ?? []).map((f) => ({
+          username: f.username,
+          streak: f.current_streak,
+          xp: f.total_xp,
+          isYou: false,
+        })),
+      ]
+    : localFriends;
+
+  const incoming = isSupabaseConfigured
+    ? (cloud?.incoming ?? []).map((r) => ({ id: r.id, from: r.username }))
+    : localIncoming.map((r) => ({ id: r.id, from: r.from }));
+
+  const outgoing = isSupabaseConfigured
+    ? (cloud?.outgoing ?? []).map((r) => ({ id: r.id, from: r.username }))
+    : localOutgoing.map((r) => ({ id: r.id, from: r.from }));
+
+  const onAccept = isSupabaseConfigured ? accept : (id: string) => acceptLocal(id);
+  const onDecline = isSupabaseConfigured ? decline : (id: string) => declineLocal(id);
 
   return (
     <div>
@@ -40,23 +106,27 @@ export default function FriendsPage() {
         <div className="flex items-center justify-between gap-4">
           <div>
             <div className="font-semibold">Invite classmates</div>
-            <p className="text-sm text-ink-muted">Send a request by username or email.</p>
+            <p className="text-sm text-ink-muted">Add a friend by their username.</p>
           </div>
           <Link href="/friends/invite" className="btn-secondary px-4 py-2 text-sm">
-            Invite
+            Add friend
           </Link>
         </div>
       </div>
 
       <section className="mb-8">
         <h2 className="text-lg font-bold mb-3">Friend requests</h2>
-        {incomingFriendRequests.length === 0 ? (
+        {loading ? (
+          <div className="rounded-xl border border-border bg-white p-4 text-sm text-ink-muted">
+            Loading…
+          </div>
+        ) : incoming.length === 0 ? (
           <div className="rounded-xl border border-border bg-white p-4 text-sm text-ink-muted">
             No incoming requests right now.
           </div>
         ) : (
           <ul className="flex flex-col gap-2">
-            {incomingFriendRequests.map((request) => (
+            {incoming.map((request) => (
               <li key={request.id} className="flex items-center gap-3 rounded-xl border border-border bg-white p-3">
                 <span className="size-10 rounded-full grid place-items-center bg-surface font-bold">
                   {request.from.slice(0, 1).toUpperCase()}
@@ -67,14 +137,14 @@ export default function FriendsPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => acceptFriendRequest(request.id)}
+                  onClick={() => onAccept(request.id)}
                   className="btn-primary px-3 py-2 text-sm"
                 >
                   Accept
                 </button>
                 <button
                   type="button"
-                  onClick={() => declineFriendRequest(request.id)}
+                  onClick={() => onDecline(request.id)}
                   className="btn-secondary px-3 py-2 text-sm"
                 >
                   Decline
@@ -85,11 +155,11 @@ export default function FriendsPage() {
         )}
       </section>
 
-      {outgoingFriendRequests.length > 0 && (
+      {outgoing.length > 0 && (
         <section className="mb-8">
           <h2 className="text-lg font-bold mb-3">Sent requests</h2>
           <ul className="flex flex-col gap-2">
-            {outgoingFriendRequests.map((request) => (
+            {outgoing.map((request) => (
               <li key={request.id} className="flex items-center gap-3 rounded-xl border border-border bg-white p-3">
                 <span className="size-10 rounded-full grid place-items-center bg-primary-light text-primary font-bold">
                   {request.from.slice(0, 1).toUpperCase()}
@@ -98,7 +168,17 @@ export default function FriendsPage() {
                   <div className="font-medium">{request.from}</div>
                   <div className="text-xs text-ink-muted">Request sent</div>
                 </div>
-                <span className="text-xs font-semibold text-ink-muted">Pending</span>
+                {isSupabaseConfigured ? (
+                  <button
+                    type="button"
+                    onClick={() => cancel(request.id)}
+                    className="text-xs font-semibold text-ink-muted hover:text-ink"
+                  >
+                    Cancel
+                  </button>
+                ) : (
+                  <span className="text-xs font-semibold text-ink-muted">Pending</span>
+                )}
               </li>
             ))}
           </ul>
@@ -114,7 +194,7 @@ export default function FriendsPage() {
             </span>
             <span className="flex-1 font-medium">
               {friend.username}
-              {"isYou" in friend && friend.isYou && <span className="ml-2 text-xs text-primary">(you)</span>}
+              {friend.isYou && <span className="ml-2 text-xs text-primary">(you)</span>}
             </span>
             <span className="text-streak font-semibold text-sm">🔥 {friend.streak}</span>
             <span className="font-bold tabular-nums">{friend.xp.toLocaleString()} XP</span>
