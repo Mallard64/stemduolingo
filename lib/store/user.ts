@@ -2,21 +2,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { calculateLessonXP } from "@/lib/scoring";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
-import {
-  cloudChangePassword,
-  cloudSignOut,
-  loadUserState,
-  syncProfileState,
-} from "@/lib/supabase/data";
-import {
-  LOOTBOX_PRICE,
-  STORE_PRICES,
-  invCount,
-  type Inventory,
-  type StoreItemId,
-} from "@/lib/store/items";
-import type { Profile } from "@/lib/types";
+import type { DailyGameId, Profile } from "@/lib/types";
 
 export type { StoreItemId } from "@/lib/store/items";
 
@@ -66,6 +52,7 @@ type UserStore = {
   heartsDate: string | null;       // YYYY-MM-DD of last refill
   completedTopics: string[];       // topic ids the user has finished
   puzzleDoneDate: string | null;   // YYYY-MM-DD the daily Element Match was last completed
+  dailyGameDoneDates: Partial<Record<DailyGameId, string>>;
   themeMode: "light" | "dark";
   friendUsernames: string[];
   outgoingFriendRequests: FriendRequest[];
@@ -90,9 +77,10 @@ type UserStore = {
   activateXpBoost: () => boolean;  // consume an xp-boost, starting/extending the 12h timer
   checkDaily: () => void;
   completeLesson: (topicId: string, heartsRemaining: number) => LessonResult;
-  completePuzzle: () => void;
+  completePuzzle: (gameId?: DailyGameId) => void;
   isTopicCompleted: (topicId: string) => boolean;
   isPuzzleDoneToday: () => boolean;
+  isDailyGameDoneToday: (gameId: DailyGameId) => boolean;
   signIn: (username: string, email?: string) => void;
   signOut: () => Promise<void>;
   setThemeMode: (mode: "light" | "dark") => void;
@@ -140,6 +128,7 @@ export const useUser = create<UserStore>()(
       heartsDate: null,
       completedTopics: [],
       puzzleDoneDate: null,
+      dailyGameDoneDates: {},
       themeMode: "light",
       friendUsernames: ["Avery", "Sam"],
       outgoingFriendRequests: [],
@@ -441,9 +430,18 @@ export const useUser = create<UserStore>()(
         return { xpEarned, newTotalXP, newStreak, streakExtended };
       },
 
-      completePuzzle: () => set({ puzzleDoneDate: today() }),
+      completePuzzle: (gameId = "element-match") => {
+        const t = today();
+        set({
+          puzzleDoneDate: gameId === "element-match" ? t : get().puzzleDoneDate,
+          dailyGameDoneDates: { ...(get().dailyGameDoneDates ?? {}), [gameId]: t },
+        });
+      },
       isTopicCompleted: (topicId) => get().completedTopics.includes(topicId),
       isPuzzleDoneToday: () => get().puzzleDoneDate === today(),
+      isDailyGameDoneToday: (gameId) =>
+        get().dailyGameDoneDates?.[gameId] === today() ||
+        (gameId === "element-match" && get().puzzleDoneDate === today()),
 
       // Local-only sign in (used when Supabase isn't configured). In cloud mode
       // the auth pages call Supabase directly and `hydrate()` loads the profile.
@@ -454,6 +452,7 @@ export const useUser = create<UserStore>()(
           heartsDate: today(),
           completedTopics: [],
           puzzleDoneDate: null,
+          dailyGameDoneDates: {},
           friendUsernames: ["Avery", "Sam"],
           outgoingFriendRequests: [],
           incomingFriendRequests: [
