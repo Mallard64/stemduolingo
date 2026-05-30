@@ -27,24 +27,24 @@ alter table public.friend_requests enable row level security;
 -- Read any request you're part of (either direction).
 drop policy if exists "friend_requests_read_own" on public.friend_requests;
 create policy "friend_requests_read_own" on public.friend_requests
-  for select using (
+  for select to authenticated using (
     auth.uid() = requester_id or auth.uid() = addressee_id
   );
 
 -- Send a request: you must be the requester.
 drop policy if exists "friend_requests_insert_own" on public.friend_requests;
 create policy "friend_requests_insert_own" on public.friend_requests
-  for insert with check (auth.uid() = requester_id);
+  for insert to authenticated with check (auth.uid() = requester_id);
 
 -- Accept / decline: only the addressee can change status. (Requester edits are
 -- not needed — to cancel, they delete instead.)
 drop policy if exists "friend_requests_update_addressee" on public.friend_requests;
 create policy "friend_requests_update_addressee" on public.friend_requests
-  for update using (auth.uid() = addressee_id);
+  for update to authenticated using (auth.uid() = addressee_id);
 
 -- Either party may remove the row (cancel a sent request / unfriend).
 drop policy if exists "friend_requests_delete_own" on public.friend_requests;
 create policy "friend_requests_delete_own" on public.friend_requests
-  for delete using (
+  for delete to authenticated using (
     auth.uid() = requester_id or auth.uid() = addressee_id
   );
