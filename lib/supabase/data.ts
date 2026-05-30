@@ -1,5 +1,6 @@
 "use client";
 import { createClient } from "./client";
+import type { Inventory } from "@/lib/store/items";
 import type { Profile } from "@/lib/types";
 
 const todayUTC = () => new Date().toISOString().slice(0, 10);
@@ -8,6 +9,17 @@ export type CloudUserState = {
   profile: Profile;
   completedTopics: string[];
   puzzleDoneDate: string | null;
+  xpBoostUntil: string | null;
+  lootboxPity: number;
+  inventory: Inventory;
+};
+
+// Owned-state the store pushes to Supabase after a purchase / open / use.
+export type StoreSyncState = {
+  total_xp: number;
+  xp_boost_until: string | null;
+  lootbox_pity: number;
+  inventory: Inventory;
 };
 
 // Loads the signed-in user's full persisted state from Supabase:
@@ -61,7 +73,35 @@ export async function loadUserState(): Promise<CloudUserState | null> {
   const puzzleDoneDate =
     puzzleRes.data && puzzleRes.data.length > 0 ? today : null;
 
-  return { profile, completedTopics, puzzleDoneDate };
+  // Store/inventory columns added in 002_store_inventory.sql. Guard with
+  // optional access so the app still loads against an un-migrated database.
+  const xpBoostUntil = (row?.xp_boost_until as string | null) ?? null;
+  const lootboxPity = (row?.lootbox_pity as number | null) ?? 0;
+  const inventory = (row?.inventory as Inventory | null) ?? {};
+
+  return { profile, completedTopics, puzzleDoneDate, xpBoostUntil, lootboxPity, inventory };
+}
+
+// Persists the user's owned-state (XP balance + inventory + boost/pity) to their
+// profiles row. Relies on the "profiles_update_own" RLS policy. No-ops when
+// Supabase isn't configured or the user is signed out.
+export async function syncProfileState(state: StoreSyncState): Promise<void> {
+  const supabase = createClient();
+  if (!supabase) return;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      total_xp: state.total_xp,
+      xp_boost_until: state.xp_boost_until,
+      lootbox_pity: state.lootbox_pity,
+      inventory: state.inventory,
+    })
+    .eq("id", user.id);
+  if (error) console.error("syncProfileState failed:", error.message);
 }
 
 export async function cloudSignOut() {
