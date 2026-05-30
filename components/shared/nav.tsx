@@ -15,6 +15,7 @@ const TABS = [
   { href: "/friends", label: "Friends", icon: "👥" },
   { href: "/daily", label: "Daily", icon: "⚗️" },
   { href: "/store", label: "Store", icon: "🛒" },
+  { href: "/inventory", label: "Items", icon: "🎒" },
   { href: "/leaderboard", label: "Ranks", icon: "🏆" },
 ];
 

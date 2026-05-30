@@ -16,7 +16,10 @@ export default function LeaderboardPage() {
 
   const data = useMemo(() => {
     if (!fakes) return null;
-    const all = profile ? [...fakes, profile] : [...fakes];
+    // The store's profile is the freshest copy of the current user; drop any
+    // duplicate of them coming from the cloud list before merging.
+    const others = profile ? fakes.filter((u) => u.id !== profile.id) : fakes;
+    const all = profile ? [...others, profile] : [...others];
     all.sort((a, b) => b.total_xp - a.total_xp);
     const ranked: LeaderboardEntry[] = all.map((u, i) => ({
       username: u.username,
