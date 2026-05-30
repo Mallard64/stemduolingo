@@ -50,6 +50,16 @@ export type TopicWithStatus = Topic & {
   completed: boolean;
 };
 
+export type DailyGameId = "bond-builder" | "reaction-run" | "element-match" | "ph-panic";
+
+export type DailyGameMeta = {
+  id: DailyGameId;
+  title: string;
+  subtitle: string;
+  focus: string;
+  accent: "primary" | "warning" | "success" | "streak";
+};
+
 export type DailyPuzzle = {
   date: string;
   items: string[];

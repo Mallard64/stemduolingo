@@ -19,6 +19,10 @@ const config: Config = {
         surface: "rgb(var(--surface) / <alpha-value>)",
         card: "rgb(var(--card-bg) / <alpha-value>)",
         border: "rgb(var(--border) / <alpha-value>)",
+        bg: "#FFFFFF",
+        surface: "#FAFAFA",
+        "card-bg": "#FFFFFF",
+        border: "#E5E5E5",
         ink: {
           DEFAULT: "rgb(var(--ink) / <alpha-value>)",
           muted: "rgb(var(--ink-muted) / <alpha-value>)",
