@@ -85,6 +85,7 @@ export type Profile = {
   id: string;
   username: string;
   email: string;
+  profile_image_url?: string | null;
   created_at: string;
   current_streak: number;
   last_active_date: string | null;

@@ -14,7 +14,7 @@ export function QuestionShell({
   const pct = Math.round(((index + 1) / total) * 100);
   return (
     <div className="min-h-screen bg-bg flex flex-col">
-      <header className="px-4 py-3 border-b border-border sticky top-0 bg-white z-10">
+      <header className="px-4 py-3 border-b border-border sticky top-0 bg-card z-10">
         <div className="max-w-3xl mx-auto flex items-center gap-4">
           <Link href="/learn" className="text-ink-muted text-xl" aria-label="Quit lesson">✕</Link>
           <div className="flex-1 h-2 bg-border rounded-full overflow-hidden">

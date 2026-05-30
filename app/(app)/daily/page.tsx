@@ -295,6 +295,27 @@ export default function DailyPuzzlePage() {
             Clear boxes
           </button>
         </div>
+      )}
+
+      <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6">
+        {available.map((item) => {
+          const isPicked = selected.includes(item);
+          return (
+            <button
+              key={item}
+              onClick={() => toggle(item)}
+              className={cn(
+                "aspect-square rounded-xl border-2 font-semibold text-sm sm:text-base transition px-1",
+                isPicked
+                  ? "bg-primary text-white border-primary scale-[0.97]"
+                  : "bg-card border-border hover:border-ink-subtle"
+              )}
+            >
+              {item}
+            </button>
+          );
+        })}
+      </div>
 
         {message && <p className="mt-4 text-center text-sm font-semibold text-error">{message}</p>}
       </section>

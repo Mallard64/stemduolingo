@@ -11,23 +11,27 @@ const config: Config = {
     extend: {
       colors: {
         primary: {
-          DEFAULT: "#DC2626",
-          dark: "#991B1B",
-          light: "#FEE2E2",
+          DEFAULT: "rgb(var(--primary) / <alpha-value>)",
+          dark: "rgb(var(--primary-dark) / <alpha-value>)",
+          light: "rgb(var(--primary-light) / <alpha-value>)",
         },
+        bg: "rgb(var(--bg) / <alpha-value>)",
+        surface: "rgb(var(--surface) / <alpha-value>)",
+        card: "rgb(var(--card-bg) / <alpha-value>)",
+        border: "rgb(var(--border) / <alpha-value>)",
         bg: "#FFFFFF",
         surface: "#FAFAFA",
         "card-bg": "#FFFFFF",
         border: "#E5E5E5",
         ink: {
-          DEFAULT: "#18181B",
-          muted: "#71717A",
-          subtle: "#A1A1AA",
+          DEFAULT: "rgb(var(--ink) / <alpha-value>)",
+          muted: "rgb(var(--ink-muted) / <alpha-value>)",
+          subtle: "rgb(var(--ink-subtle) / <alpha-value>)",
         },
-        success: "#22C55E",
-        warning: "#F59E0B",
-        error: "#EF4444",
-        streak: "#F97316",
+        success: "rgb(var(--success) / <alpha-value>)",
+        warning: "rgb(var(--warning) / <alpha-value>)",
+        error: "rgb(var(--error) / <alpha-value>)",
+        streak: "rgb(var(--streak) / <alpha-value>)",
       },
       keyframes: {  
         shake: {

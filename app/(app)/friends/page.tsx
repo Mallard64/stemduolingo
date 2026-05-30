@@ -20,7 +20,15 @@ export default function FriendsPage() {
   const friends = useMemo(
     () => [
       ...(profile
-        ? [{ username: profile.username, streak: profile.current_streak, xp: profile.total_xp, isYou: true }]
+        ? [
+            {
+              username: profile.username,
+              streak: profile.current_streak,
+              xp: profile.total_xp,
+              imageUrl: profile.profile_image_url ?? null,
+              isYou: true,
+            },
+          ]
         : []),
       ...friendUsernames.map((username) => ({
         username,
@@ -51,13 +59,13 @@ export default function FriendsPage() {
       <section className="mb-8">
         <h2 className="text-lg font-bold mb-3">Friend requests</h2>
         {incomingFriendRequests.length === 0 ? (
-          <div className="rounded-xl border border-border bg-white p-4 text-sm text-ink-muted">
+          <div className="rounded-xl border border-border bg-card p-4 text-sm text-ink-muted">
             No incoming requests right now.
           </div>
         ) : (
           <ul className="flex flex-col gap-2">
             {incomingFriendRequests.map((request) => (
-              <li key={request.id} className="flex items-center gap-3 rounded-xl border border-border bg-white p-3">
+              <li key={request.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
                 <span className="size-10 rounded-full grid place-items-center bg-surface font-bold">
                   {request.from.slice(0, 1).toUpperCase()}
                 </span>
@@ -90,7 +98,7 @@ export default function FriendsPage() {
           <h2 className="text-lg font-bold mb-3">Sent requests</h2>
           <ul className="flex flex-col gap-2">
             {outgoingFriendRequests.map((request) => (
-              <li key={request.id} className="flex items-center gap-3 rounded-xl border border-border bg-white p-3">
+              <li key={request.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
                 <span className="size-10 rounded-full grid place-items-center bg-primary-light text-primary font-bold">
                   {request.from.slice(0, 1).toUpperCase()}
                 </span>
@@ -108,10 +116,8 @@ export default function FriendsPage() {
       <h2 className="text-lg font-bold mb-3">Your circle</h2>
       <ol className="flex flex-col gap-2">
         {friends.map((friend) => (
-          <li key={friend.username} className="flex items-center gap-3 rounded-xl border border-border bg-white p-3">
-            <span className="size-10 rounded-full grid place-items-center bg-primary-light text-primary font-bold">
-              {friend.username.slice(0, 1).toUpperCase()}
-            </span>
+          <li key={friend.username} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
+            <FriendAvatar username={friend.username} imageUrl={"imageUrl" in friend ? friend.imageUrl : null} />
             <span className="flex-1 font-medium">
               {friend.username}
               {"isYou" in friend && friend.isYou && <span className="ml-2 text-xs text-primary">(you)</span>}
@@ -122,5 +128,13 @@ export default function FriendsPage() {
         ))}
       </ol>
     </div>
+  );
+}
+
+function FriendAvatar({ username, imageUrl }: { username: string; imageUrl?: string | null }) {
+  return (
+    <span className="size-10 overflow-hidden rounded-full grid place-items-center bg-primary-light text-primary font-bold">
+      {imageUrl ? <img src={imageUrl} alt="" className="size-full object-cover" /> : username.slice(0, 1).toUpperCase()}
+    </span>
   );
 }

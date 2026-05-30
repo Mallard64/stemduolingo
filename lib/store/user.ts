@@ -25,6 +25,10 @@ type PurchaseResult = {
   message: string;
 };
 
+type ProfileUpdateResult = {
+  ok: boolean;
+  message?: string;
+};
 // --- LOOTBOX CONFIGURATION ---
 type Rarity = "common" | "uncommon" | "rare" | "legendary";
 
@@ -58,11 +62,16 @@ type UserStore = {
   friendUsernames: string[];
   outgoingFriendRequests: FriendRequest[];
   incomingFriendRequests: FriendRequest[];
+  profileImages: Record<string, string>;
+  profileUsernames: Record<string, string>;
+  accountEmailsByUsername: Record<string, string>;
   streakFreezes: number;
   xpBoostUntil: string | null;
   lootboxPity: number;             // NEW: Tracks pulls without a Rare/Legendary
   hydrated: boolean;
   setProfile: (p: Profile) => void;
+  setProfileImage: (imageUrl: string | null) => void;
+  updateProfileDetails: (details: { username: string; profileImageUrl: string | null }) => ProfileUpdateResult;
   loseHeart: () => void;
   refillHearts: () => void;
   gainHeart: () => void;
@@ -98,10 +107,15 @@ const STORE_PRICES: Record<StoreItemId, number> = {
 const daysBetween = (from: string, to: string) =>
   Math.round((Date.parse(to) - Date.parse(from)) / 86400000);
 
-const localProfile = (username: string, email?: string): Profile => ({
+const profileIdentityKey = (username: string, email?: string) => (email || username).trim().toLowerCase();
+const normalizeUsername = (username: string) => username.trim().toLowerCase();
+const isEmailLike = (value: string) => value.includes("@");
+
+const localProfile = (username: string, email: string | undefined, imageUrl: string | null): Profile => ({
   id: "demo-user",
   username,
   email: email || "",
+  profile_image_url: imageUrl,
   created_at: new Date().toISOString(),
   current_streak: 0,
   last_active_date: null,
@@ -124,11 +138,57 @@ export const useUser = create<UserStore>()(
         { id: "req-maya", from: "Maya", sentAt: new Date().toISOString() },
         { id: "req-jordan", from: "Jordan", sentAt: new Date().toISOString() },
       ],
+      profileImages: {},
+      profileUsernames: {},
+      accountEmailsByUsername: {},
       streakFreezes: 0,
       xpBoostUntil: null,
       lootboxPity: 0,
       hydrated: false,
       setProfile: (p) => set({ profile: p }),
+      setProfileImage: (imageUrl) => {
+        const p = get().profile;
+        if (!p) return;
+        const key = profileIdentityKey(p.username, p.email);
+        const nextImages = { ...get().profileImages };
+        if (imageUrl) {
+          nextImages[key] = imageUrl;
+        } else {
+          delete nextImages[key];
+        }
+        set({ profile: { ...p, profile_image_url: imageUrl }, profileImages: nextImages });
+      },
+      updateProfileDetails: ({ username, profileImageUrl }) => {
+        const p = get().profile;
+        if (!p) return { ok: false, message: "No active profile." };
+        const key = profileIdentityKey(p.username, p.email);
+        const cleanUsername = username.trim() || p.username;
+        const oldUsernameKey = normalizeUsername(p.username);
+        const newUsernameKey = normalizeUsername(cleanUsername);
+        const emailKey = p.email.trim().toLowerCase();
+        const existingEmailForUsername = get().accountEmailsByUsername[newUsernameKey];
+        if (existingEmailForUsername && existingEmailForUsername !== emailKey) {
+          return { ok: false, message: "That username is already taken." };
+        }
+
+        const nextImages = { ...get().profileImages };
+        if (profileImageUrl) {
+          nextImages[key] = profileImageUrl;
+        }
+        const nextUsernames = { ...get().profileUsernames, [key]: cleanUsername };
+        const nextEmailsByUsername = { ...get().accountEmailsByUsername };
+        delete nextEmailsByUsername[oldUsernameKey];
+        if (emailKey) {
+          nextEmailsByUsername[newUsernameKey] = emailKey;
+        }
+        set({
+          profile: { ...p, username: cleanUsername, profile_image_url: profileImageUrl },
+          profileImages: nextImages,
+          profileUsernames: nextUsernames,
+          accountEmailsByUsername: nextEmailsByUsername,
+        });
+        return { ok: true };
+      },
       loseHeart: () => set({ hearts: Math.max(0, get().hearts - 1) }),
       refillHearts: () => set({ hearts: HEART_CAP, heartsDate: today() }),
       gainHeart: () => set({ hearts: Math.min(HEART_CAP, get().hearts + 1) }),
@@ -328,9 +388,24 @@ export const useUser = create<UserStore>()(
         get().dailyGameDoneDates?.[gameId] === today() ||
         (gameId === "element-match" && get().puzzleDoneDate === today()),
 
-      signIn: (username, email?: string) =>
+      signIn: (username, email?: string) => {
+        const identifier = username.trim();
+        const explicitEmail = email?.trim();
+        const resolvedEmail =
+          explicitEmail ??
+          (isEmailLike(identifier)
+            ? identifier
+            : get().accountEmailsByUsername[normalizeUsername(identifier)] || undefined);
+        const fallbackUsername = isEmailLike(identifier) ? identifier.split("@")[0] || "you" : identifier || "you";
+        const key = profileIdentityKey(fallbackUsername, resolvedEmail);
+        const savedUsername = get().profileUsernames[key] ?? fallbackUsername;
+        const imageUrl = get().profileImages[key] ?? null;
+        const nextEmailsByUsername = { ...get().accountEmailsByUsername };
+        if (resolvedEmail) {
+          nextEmailsByUsername[normalizeUsername(savedUsername)] = resolvedEmail.toLowerCase();
+        }
         set({
-          profile: localProfile(username, email),
+          profile: localProfile(savedUsername, resolvedEmail, imageUrl),
           hearts: HEART_CAP,
           heartsDate: today(),
           completedTopics: [],
@@ -344,6 +419,9 @@ export const useUser = create<UserStore>()(
           ],
           streakFreezes: 0,
           xpBoostUntil: null,
+          accountEmailsByUsername: nextEmailsByUsername,
+        });
+      },
           lootboxPity: 0, // Reset pity on new sign in
         }),
       signOut: () => set({ profile: null }),
