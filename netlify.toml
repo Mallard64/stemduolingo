@@ -4,6 +4,10 @@
 
 [build.environment]
   NODE_VERSION = "22"
+  # These NEXT_PUBLIC_* values are intentionally public — they're compiled into
+  # the client bundle and the anon key is RLS-protected. Exclude them from
+  # Netlify's secret scanner (which would otherwise flag them in build output).
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
