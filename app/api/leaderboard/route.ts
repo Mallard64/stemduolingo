@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   let real: Profile[] = [];
 
-  const supabase = createClient();
+  const supabase = await createClient();
   if (supabase) {
     const { data } = await supabase
       .from("profiles")

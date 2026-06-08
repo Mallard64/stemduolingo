@@ -18,7 +18,7 @@ const daysBetween = (from: string, to: string) =>
 // the source of truth for these numbers (RLS ensures users write only their own).
 export async function POST(req: Request) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     if (!supabase) {
       return NextResponse.json({ error: "supabase not configured" }, { status: 503 });
     }

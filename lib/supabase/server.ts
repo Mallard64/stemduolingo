@@ -4,9 +4,9 @@ import { SUPABASE_ANON_KEY, SUPABASE_URL, isSupabaseConfigured } from "./config"
 
 // Server Supabase client bound to the request cookies. Use in route handlers
 // and server components. Returns null when Supabase isn't configured.
-export function createClient() {
+export async function createClient() {
   if (!isSupabaseConfigured) return null;
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
 
   return createServerClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
     cookies: {
