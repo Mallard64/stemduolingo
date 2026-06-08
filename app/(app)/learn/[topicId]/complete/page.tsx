@@ -1,10 +1,11 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useUser } from "@/lib/store/user";
 
-export default function CompletePage({ params }: { params: { topicId: string } }) {
+export default function CompletePage({ params }: { params: Promise<{ topicId: string }> }) {
+  const { topicId } = use(params);
   const sp = useSearchParams();
   const hearts = Number(sp.get("hearts") ?? 5);
 
@@ -18,9 +19,9 @@ export default function CompletePage({ params }: { params: { topicId: string } }
   useEffect(() => {
     if (recorded.current) return;   // guard against StrictMode double-invoke
     recorded.current = true;
-    setResult(completeLesson(params.topicId, hearts));
+    setResult(completeLesson(topicId, hearts));
     gainHeart();   // completion bonus: +1 heart (capped at 5)
-  }, [params.topicId, hearts, completeLesson, gainHeart]);
+  }, [topicId, hearts, completeLesson, gainHeart]);
 
   useEffect(() => {
     if (!result) return;

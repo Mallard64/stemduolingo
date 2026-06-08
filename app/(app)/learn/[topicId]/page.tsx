@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { QuestionShell } from "@/components/questions/question-shell";
 import { MCQ } from "@/components/questions/mcq";
@@ -8,7 +8,8 @@ import { useLesson } from "@/lib/store/lesson";
 import { useUser } from "@/lib/store/user";
 import type { MCQQuestion } from "@/lib/types";
 
-export default function LessonPage({ params }: { params: { topicId: string } }) {
+export default function LessonPage({ params }: { params: Promise<{ topicId: string }> }) {
+  const { topicId: routeTopicId } = use(params);
   const router = useRouter();
   const hearts = useUser((s) => s.hearts);
   const loseHeart = useUser((s) => s.loseHeart);
@@ -34,9 +35,9 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
   // Start (or restart) the lesson on mount / topic change; dispose the cache on unmount.
   useEffect(() => {
     requestedRef.current.clear();
-    startLesson(params.topicId, useUser.getState().hearts);
+    startLesson(routeTopicId, useUser.getState().hearts);
     return () => reset();
-  }, [params.topicId, startLesson, reset]);
+  }, [routeTopicId, startLesson, reset]);
 
   // Generate the question for the current slot if it isn't cached yet.
   useEffect(() => {
@@ -79,12 +80,12 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
   // Navigate away in an effect — never call router.replace during render.
   useEffect(() => {
     if (outOfHearts) {
-      router.replace(`/learn/${params.topicId}/failed`);
+      router.replace(`/learn/${routeTopicId}/failed`);
     } else if (lessonDone) {
       const time = Math.round((Date.now() - startedAt) / 1000);
-      router.replace(`/learn/${params.topicId}/complete?hearts=${hearts}&time=${time}`);
+      router.replace(`/learn/${routeTopicId}/complete?hearts=${hearts}&time=${time}`);
     }
-  }, [outOfHearts, lessonDone, router, params.topicId, hearts, startedAt]);
+  }, [outOfHearts, lessonDone, router, routeTopicId, hearts, startedAt]);
 
   if (outOfHearts || lessonDone) return null;
 
