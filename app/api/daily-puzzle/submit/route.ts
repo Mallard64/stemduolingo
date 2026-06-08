@@ -47,7 +47,7 @@ export async function POST(req: Request) {
   const correct = groupingsMatch(body.groupings, puzzle.groups);
 
   // Persist the attempt for the signed-in user (one row per user per date).
-  const supabase = createClient();
+  const supabase = await createClient();
   if (supabase) {
     const {
       data: { user },

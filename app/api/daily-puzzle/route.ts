@@ -11,7 +11,7 @@ export async function GET() {
 
   // Whether the signed-in user already played today (cloud-tracked).
   let already_completed = false;
-  const supabase = createClient();
+  const supabase = await createClient();
   if (supabase) {
     const {
       data: { user },
