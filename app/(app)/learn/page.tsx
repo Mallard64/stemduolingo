@@ -2,27 +2,35 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import type { TopicWithStatus } from "@/lib/types";
+import { useUser } from "@/lib/store/user";
+import type { Topic, TopicWithStatus } from "@/lib/types";
 
 export default function LearnPage() {
-  const [topics, setTopics] = useState<TopicWithStatus[] | null>(null);
+  const [rawTopics, setRawTopics] = useState<Topic[] | null>(null);
+  const completedTopics = useUser((s) => s.completedTopics);
 
   useEffect(() => {
     fetch("/api/topics")
       .then((r) => r.json())
-      .then((d) => setTopics(d.topics));
+      .then((d) => setRawTopics(d.topics));
   }, []);
 
-  if (!topics) {
+  if (!rawTopics) {
     return <div className="text-ink-muted">Loading skill tree…</div>;
   }
+
+  const topics: TopicWithStatus[] = rawTopics.map((t) => ({
+    ...t,
+    completed: completedTopics.includes(t.id),
+    locked: t.unlock_requires.some((req) => !completedTopics.includes(req)),
+  }));
 
   const currentIdx = topics.findIndex((t) => !t.completed && !t.locked);
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-1">AP Chemistry</h1>
-      <p className="text-ink-muted text-sm mb-6">5 topics · linear unlock</p>
+      <h1 className="text-2xl font-bold mb-1">AP Chemistry · Unit 1</h1>
+      <p className="text-ink-muted text-sm mb-6">Atomic Structure & Properties · {topics.length} learning targets</p>
 
       <ol className="relative flex flex-col items-center gap-8">
         <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-1 bg-border rounded-full" />
