@@ -96,7 +96,7 @@ export default function LessonPage({ params }: { params: { topicId: string } }) 
         <div className="min-h-[40vh] grid place-items-center text-center">
           {error ? (
             <div>
-              <p className="text-ink-muted mb-4">Couldn't load the next question.</p>
+              <p className="text-ink-muted mb-4">Couldn&apos;t load the next question.</p>
               <button
                 className="btn-primary"
                 onClick={() => {

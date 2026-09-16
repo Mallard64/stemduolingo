@@ -53,7 +53,7 @@ export default function LearnPage() {
       <div className="mt-10 card">
         <div className="flex items-center justify-between">
           <div>
-            <div className="font-semibold">Today's Element Match</div>
+            <div className="font-semibold">Today&apos;s Element Match</div>
             <div className="text-sm text-ink-muted">Quick daily puzzle — 30s to 1m.</div>
           </div>
           <Link href="/daily" className="btn-primary">Play</Link>

@@ -43,7 +43,7 @@ export default function CompletePage({ params }: { params: { topicId: string } }
       <div className="max-w-md">
         <div className="text-7xl mb-4 animate-bounce" aria-hidden>🎉</div>
         <h1 className="text-3xl font-bold mb-1">Lesson complete!</h1>
-        <p className="text-ink-muted mb-8">Nice work — you're building a streak.</p>
+        <p className="text-ink-muted mb-8">Nice work — you&apos;re building a streak.</p>
 
         <div className="grid grid-cols-3 gap-3 mb-8">
           <Stat label="XP earned" value={`+${counter}`} accent />

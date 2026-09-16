@@ -76,7 +76,7 @@ export default function LeaderboardPage() {
 
       {data.current_user_rank && (
         <p className="text-sm text-ink-muted text-center mt-4">
-          You're currently rank #{data.current_user_rank}
+          You&apos;re currently rank #{data.current_user_rank}
         </p>
       )}
     </div>

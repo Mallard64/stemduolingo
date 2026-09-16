@@ -23,8 +23,8 @@ export default function LandingPage() {
             Bite-size lessons, a daily Element Match puzzle, and a leaderboard that keeps you coming back.
           </p>
           <div className="flex gap-3 justify-center flex-wrap">
-            <Link href="/signup" className="btn-primary">Get started — it's free</Link>
-            <Link href="/daily" className="btn-secondary">Try today's puzzle</Link>
+            <Link href="/signup" className="btn-primary">Get started — it&apos;s free</Link>
+            <Link href="/daily" className="btn-secondary">Try today&apos;s puzzle</Link>
           </div>
 
           <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">

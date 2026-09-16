@@ -29,6 +29,9 @@ export default function InventoryPage() {
     return Math.max(0, Date.parse(xpBoostUntil) - now);
   }, [now, xpBoostUntil]);
 
+  // useHeartRefill / useStreakFreeze are store actions meaning "consume this
+  // item" — not React hooks. The lint rule matches on the "use" prefix only.
+  /* eslint-disable react-hooks/rules-of-hooks */
   function handleUse(itemId: StoreItemId) {
     if (itemId === "heart-refill") {
       const ok = useHeartRefill();
@@ -47,6 +50,7 @@ export default function InventoryPage() {
       setNotice(ok ? "2x XP boost activated for the next 12 hours." : "You don't have an XP boost to activate.");
     }
   }
+  /* eslint-enable react-hooks/rules-of-hooks */
 
   const ownedItems = STORE_ITEMS.filter((item) => invCount(inventory, item.id) > 0);
 

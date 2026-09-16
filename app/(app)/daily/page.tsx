@@ -239,7 +239,7 @@ export default function DailyPuzzlePage() {
         <section className="card text-center mb-6">
           <div className="text-sm uppercase tracking-wider text-ink-muted font-semibold mb-2">{TODAY}</div>
           <h1 className="text-2xl font-bold mb-2">Daily Balance Builder is complete</h1>
-          <p className="text-ink-muted mb-5">You cannot redo today's equation. Come back tomorrow for a new one.</p>
+          <p className="text-ink-muted mb-5">You cannot redo today&apos;s equation. Come back tomorrow for a new one.</p>
           <button className="btn-primary" onClick={() => router.push("/daily/result")}>View result</button>
         </section>
         <Leaderboard entries={leaderboard} />
