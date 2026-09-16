@@ -72,7 +72,7 @@ export function OrderQ({
             <button
               onClick={() => pick(o.id)}
               disabled={disabled || submitted}
-              className="px-3 py-2 rounded-lg border-2 border-border bg-white hover:border-ink-subtle font-medium"
+              className="px-3 py-2 rounded-lg border-2 border-border bg-card hover:border-ink-subtle font-medium"
             >
               {o.text}
             </button>

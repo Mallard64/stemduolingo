@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { puzzleForDate, todayUTC, puzzleNumber } from "@/lib/seed/puzzles";
-import { DEMO_USER, recordPuzzleResult } from "@/lib/store/server-state";
 
 type Body = { groupings: string[][]; time_seconds: number; mistakes: number };
 
@@ -44,7 +43,6 @@ export async function POST(req: Request) {
   const puzzle = puzzleForDate(date);
 
   const correct = groupingsMatch(body.groupings, puzzle.groups);
-  recordPuzzleResult(DEMO_USER, date, body.time_seconds, body.mistakes, correct);
 
   const tiles = tilesForGroups(body.groupings, puzzle.groups, correct, body.mistakes);
   const mm = Math.floor(body.time_seconds / 60);
