@@ -1,7 +1,23 @@
+# dependencies
 node_modules
+
+# build output
 .next
-.env*.local
-.DS_Store
-*.log
-next-env.d.ts
+out
 *.tsbuildinfo
+next-env.d.ts
+
+# env — .env* covers .env, .env.local, .env.production, etc.
+# Only .env.example is committed.
+.env*
+!.env.example
+
+# logs
+*.log
+
+# os
+.DS_Store
+
+# local AI assistant context
+CLAUDE.md
+.claude/
