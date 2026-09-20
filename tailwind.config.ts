@@ -17,6 +17,7 @@ const config: Config = {
         },
         bg: "#FFFFFF",
         surface: "#FAFAFA",
+        "card-bg": "#FFFFFF",
         border: "#E5E5E5",
         ink: {
           DEFAULT: "#18181B",
@@ -28,7 +29,7 @@ const config: Config = {
         error: "#EF4444",
         streak: "#F97316",
       },
-      keyframes: {
+      keyframes: {  
         shake: {
           "0%,100%": { transform: "translateX(0)" },
           "20%,60%": { transform: "translateX(-6px)" },

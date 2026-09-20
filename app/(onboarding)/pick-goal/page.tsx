@@ -15,7 +15,7 @@ export default function PickGoal() {
     <main className="min-h-screen grid place-items-center px-6">
       <div className="w-full max-w-md">
         <h1 className="text-2xl font-bold mb-2 text-center">What brings you here?</h1>
-        <p className="text-ink-muted text-center mb-8">We'll keep the tone right for you.</p>
+        <p className="text-ink-muted text-center mb-8">We&apos;ll keep the tone right for you.</p>
 
         <ul className="flex flex-col gap-3">
           {GOALS.map((g) => (
