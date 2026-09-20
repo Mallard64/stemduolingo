@@ -20,7 +20,7 @@ export default function LandingPage() {
             Ace AP Chem, one streak at a time.
           </h1>
           <p className="text-ink-muted text-lg mb-8">
-            Bite-size lessons, a daily Element Match puzzle, and a leaderboard that keeps you coming back.
+            Bite-size lessons, a daily equation-balancing puzzle, and a leaderboard that keeps you coming back.
           </p>
           <div className="flex gap-3 justify-center flex-wrap">
             <Link href="/signup" className="btn-primary">Get started — it&apos;s free</Link>
@@ -29,9 +29,9 @@ export default function LandingPage() {
 
           <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
             {[
-              { icon: "📚", h: "5 lessons", p: "Atomic structure → stoichiometry." },
+              { icon: "📚", h: "8 lessons", p: "Unit 1: moles → periodic trends." },
               { icon: "🔥", h: "Daily streak", p: "Show up daily, level up." },
-              { icon: "⚗️", h: "Element Match", p: "A new puzzle every day." },
+              { icon: "⚗️", h: "Balance Builder", p: "A new equation every day." },
             ].map((f) => (
               <div key={f.h} className="card">
                 <div className="text-2xl mb-2" aria-hidden>{f.icon}</div>
